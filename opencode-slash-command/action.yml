@@ -1,7 +1,7 @@
-name: OpenCode resolve trigger
-description: Resolve OpenCode slash commands, authorization, model, and prompt from GitHub events
+name: OpenCode slash command
+description: Parse OpenCode slash commands (/oc, /oci, …), check authorization, and output mode, model, and prompt
 branding:
-  icon: code
+  icon: terminal
   color: orange
 
 inputs:

@@ -6,9 +6,9 @@ Pin releases with `@v1` (see [Releases](https://github.com/hskksk/gh-actions/rel
 
 ## Actions
 
-### `opencode-resolve-trigger`
+### `opencode-slash-command`
 
-Resolves OpenCode slash commands (`/oc`, `/oci`, …), authorization, model, and prompt from issue/PR events.
+Parses OpenCode slash commands (`/oc`, `/oci`, …) from issue/PR events, checks who may run them, and outputs mode, model, and prompt.
 
 | Input | Default | Description |
 |-------|---------|-------------|
@@ -23,7 +23,7 @@ Resolves OpenCode slash commands (`/oc`, `/oci`, …), authorization, model, and
 | `prompt` | Text for OpenCode |
 
 ```yaml
-- uses: hskksk/gh-actions/opencode-resolve-trigger@v1
+- uses: hskksk/gh-actions/opencode-slash-command@v1
   id: slash
   with:
     trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
@@ -54,25 +54,11 @@ Installs pnpm and Node.js; optionally runs `pnpm install`.
 
 ### `.github/workflows/opencode.yml`
 
-Full OpenCode job (checkout → resolve → toolchain → `anomalyco/opencode/github`). The **caller** defines `on:` triggers.
+Full OpenCode job (checkout → parse slash command → toolchain → `anomalyco/opencode/github`). The **caller** defines `on:` triggers.
 
-**Secrets:** `OPENCODE_API_KEY`, `OPENCODE_GO_API_KEY` (inherit via `secrets: inherit`).
-
-**Example (podcaster-style):**
+**Secrets:** `OPENCODE_API_KEY`, `OPENCODE_GO_API_KEY` (`secrets: inherit`).
 
 ```yaml
-name: opencode
-
-on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
-  issues:
-    types: [opened, edited]
-  pull_request:
-    types: [opened, edited]
-
 jobs:
   opencode:
     uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
@@ -84,32 +70,52 @@ jobs:
       trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
 ```
 
-**Prism-style (Bun + auth stub):**
+Bun toolchain: `toolchain: bun`, `bun-version: "1.3.0"`, optional `stub-opencode-auth: true`.
+
+Internal steps pin `hskksk/gh-actions/*@v1` and `anomalyco/opencode/github@latest`.
+
+### `.github/workflows/npm-release-staged.yml`
+
+semantic-release on `main` (or any caller trigger) with **npm stage publish** via the package repo’s `.releaserc.json` (e.g. `@semantic-release/exec` + `npm stage publish`).
+
+Pre-release order: **typecheck → test → build** (commands are overridable).
 
 ```yaml
+jobs:
+  release:
+    uses: hskksk/gh-actions/.github/workflows/npm-release-staged.yml@v1
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     with:
-      toolchain: bun
-      bun-version: "1.3.0"
-      stub-opencode-auth: true
-      trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
+      pnpm-version: "11.25.0"
+      node-version: "22.14.0"
 ```
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `toolchain` | `pnpm` | `pnpm` or `bun` |
-| `pnpm-version` | `9.14.0` | For pnpm toolchain |
-| `node-version` | `24` | For pnpm toolchain |
-| `bun-version` | `1.3.0` | For bun toolchain |
-| `stub-opencode-auth` | `false` | Empty `auth.json` before build |
-| `trigger-allowlist` | `""` | Allowlist variable value |
+| `pnpm-version` | (required) | pnpm version |
+| `node-version` | (required) | Node.js version |
+| `cache-dependency-path` | `pnpm-lock.yaml` | Lockfile for cache |
+| `run-typecheck` | `pnpm run typecheck` | Empty to skip |
+| `run-test` | `pnpm test` | Test command |
+| `run-build` | `pnpm run build` | Build command |
 
-Internal steps pin `hskksk/gh-actions/*@v1` and `anomalyco/opencode/github@latest`. Bump the **reusable workflow ref** (`@v1`) when upgrading this repo.
+Does **not** set `registry-url` on `setup-node` (OIDC + semantic-release). Upgrades global npm to `^11.15.0` for `npm stage`.
 
 ## Development
 
 ```bash
-cd opencode-resolve-trigger
+cd opencode-slash-command
 pnpm install
 pnpm test
 pnpm run build   # writes dist/index.js (commit after changes)
+```
+
+Validate workflows (optional):
+
+```bash
+actionlint .github/workflows/*.yml
 ```

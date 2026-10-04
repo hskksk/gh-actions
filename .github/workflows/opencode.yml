@@ -67,9 +67,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Resolve slash command
+      - name: Parse OpenCode slash command
         id: slash
-        uses: hskksk/gh-actions/opencode-resolve-trigger@v1
+        uses: hskksk/gh-actions/opencode-slash-command@v1
         with:
           trigger-allowlist: ${{ inputs.trigger-allowlist }}
 

@@ -9,12 +9,12 @@ permissions:
   contents: read
 
 jobs:
-  opencode-resolve-trigger:
-    name: opencode-resolve-trigger (test & build)
+  opencode-slash-command:
+    name: opencode-slash-command (test & build)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: opencode-resolve-trigger
+        working-directory: opencode-slash-command
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +23,7 @@ jobs:
           pnpm-version: "9.14.0"
           node-version: "24"
           install: "false"
-          cache-dependency-path: opencode-resolve-trigger/pnpm-lock.yaml
+          cache-dependency-path: opencode-slash-command/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 
