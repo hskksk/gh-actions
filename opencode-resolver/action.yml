@@ -1,5 +1,5 @@
-name: OpenCode slash command
-description: Parse OpenCode slash commands (/oc, /oci, …), check authorization, and output mode, model, and prompt
+name: OpenCode resolver
+description: Parse OpenCode slash commands, check authorization, and output mode, model, and prompt
 branding:
   icon: terminal
   color: orange

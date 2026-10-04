@@ -69,7 +69,7 @@ jobs:
 
       - name: Parse OpenCode slash command
         id: slash
-        uses: hskksk/gh-actions/opencode-slash-command@v1
+        uses: hskksk/gh-actions/opencode-resolver@v1
         with:
           trigger-allowlist: ${{ inputs.trigger-allowlist }}
 

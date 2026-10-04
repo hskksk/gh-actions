@@ -1,5 +1,5 @@
 {
-  "name": "opencode-slash-command",
+  "name": "opencode-resolver",
   "private": true,
   "type": "module",
   "scripts": {
