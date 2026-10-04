@@ -40,6 +40,7 @@ Installs pnpm and Node.js; optionally runs `pnpm install`.
 | `cache` | `true` | Enable pnpm cache in setup-node |
 | `install` | `false` | Run `pnpm install` |
 | `frozen-lockfile` | `true` | Pass `--frozen-lockfile` when installing |
+| `cache-dependency-path` | `pnpm-lock.yaml` | Lockfile path for setup-node cache |
 
 ```yaml
 - uses: hskksk/gh-actions/setup-pnpm@v1

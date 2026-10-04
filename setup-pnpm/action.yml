@@ -23,6 +23,10 @@ inputs:
     description: When install is true, pass --frozen-lockfile
     required: false
     default: "true"
+  cache-dependency-path:
+    description: Lockfile path for setup-node pnpm cache (default pnpm-lock.yaml at repo root)
+    required: false
+    default: pnpm-lock.yaml
 
 runs:
   using: composite
@@ -38,6 +42,7 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
 
     - name: Setup Node.js (no cache)
       if: inputs.cache != 'true'
