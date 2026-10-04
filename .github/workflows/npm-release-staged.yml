@@ -1,0 +1,79 @@
+# Reusable semantic-release job with npm stage publish (OIDC).
+# Caller defines `on:` and keeps `.releaserc.json` in the package repo.
+name: npm release (staged)
+
+on:
+  workflow_call:
+    inputs:
+      pnpm-version:
+        description: pnpm version
+        type: string
+        required: true
+      node-version:
+        description: Node.js version (npm trusted publishing needs Node 22.14+)
+        type: string
+        required: true
+      cache-dependency-path:
+        description: Lockfile path for setup-node pnpm cache
+        type: string
+        default: pnpm-lock.yaml
+      run-typecheck:
+        description: Command to run; leave empty to skip
+        type: string
+        default: pnpm run typecheck
+      run-test:
+        description: Test command
+        type: string
+        default: pnpm test
+      run-build:
+        description: Build command
+        type: string
+        default: pnpm run build
+
+jobs:
+  release:
+    name: semantic-release → npm stage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Do not set registry-url on setup-node — semantic-release + OIDC conflict.
+      # https://semantic-release.org/recipes/ci-configurations/github-actions/
+      - name: Setup pnpm and Node.js
+        uses: hskksk/gh-actions/setup-pnpm@v1
+        with:
+          pnpm-version: ${{ inputs.pnpm-version }}
+          node-version: ${{ inputs.node-version }}
+          cache: "true"
+          cache-dependency-path: ${{ inputs.cache-dependency-path }}
+          install: "false"
+
+      - name: Upgrade npm CLI for stage publish
+        run: npm install -g npm@^11.15.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        if: inputs.run-typecheck != ''
+        run: ${{ inputs.run-typecheck }}
+
+      - name: Test
+        run: ${{ inputs.run-test }}
+
+      - name: Build
+        run: ${{ inputs.run-build }}
+
+      - name: Release
+        run: pnpm exec semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

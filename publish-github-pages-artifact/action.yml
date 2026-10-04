@@ -1,0 +1,27 @@
+name: Publish GitHub Pages artifact
+description: configure-pages and upload-pages-artifact when not skipped
+branding:
+  icon: upload
+  color: purple
+
+inputs:
+  path:
+    description: Directory to upload as the Pages artifact
+    required: true
+  skip:
+    description: Set to true to skip upload (e.g. site URL unset)
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Configure GitHub Pages
+      if: inputs.skip != 'true'
+      uses: actions/configure-pages@v5
+
+    - name: Upload Pages artifact
+      if: inputs.skip != 'true'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ${{ inputs.path }}

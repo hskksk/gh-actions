@@ -1,0 +1,31 @@
+name: OpenCode resolver
+description: Parse OpenCode slash commands, check authorization, and output mode, model, and prompt
+branding:
+  icon: terminal
+  color: orange
+
+inputs:
+  github-token:
+    description: GitHub token for collaborator permission checks
+    required: false
+    default: ${{ github.token }}
+  trigger-allowlist:
+    description: Comma- or newline-separated GitHub logins (optional @ prefix)
+    required: false
+    default: ""
+  default-model:
+    description: Model when none is specified
+    required: false
+    default: opencode/big-pickle
+
+outputs:
+  mode:
+    description: skip, reply, or build
+  model:
+    description: Resolved model id
+  prompt:
+    description: Prompt text passed to OpenCode
+
+runs:
+  using: node24
+  main: dist/index.js

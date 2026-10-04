@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-lint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install actionlint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- 1.7.7
+          sudo mv actionlint /usr/local/bin/
+
+      - name: Lint workflows
+        run: actionlint -color .github/workflows/*.yml
+
+  opencode-resolver:
+    name: opencode-resolver (test & build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: opencode-resolver
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./setup-pnpm
+        with:
+          pnpm-version: "9.14.0"
+          node-version: "24"
+          install: "false"
+          cache-dependency-path: opencode-resolver/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm run build
+
+      - name: Verify dist exists
+        run: test -f dist/index.js
+
+      - name: Verify action metadata
+        run: test -f action.yml
+
+  smoke-setup-pnpm:
+    name: setup-pnpm smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./setup-pnpm
+        with:
+          pnpm-version: "9.14.0"
+          node-version: "24"
+          install: "false"
+          cache: "false"
+
+      - run: pnpm --version
+      - run: node --version
+
+  smoke-setup-supabase-cli:
+    name: setup-supabase-cli (missing secrets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Expect failure when secrets unset
+        uses: ./setup-supabase-cli
+        continue-on-error: true
+        id: supabase
+
+      - name: Assert missing-secret guard
+        run: |
+          if [ "${{ steps.supabase.outcome }}" != "failure" ]; then
+            echo "Expected setup-supabase-cli to fail without secrets"
+            exit 1
+          fi
+
+  smoke-publish-github-pages-artifact:
+    name: publish-github-pages-artifact (skip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./publish-github-pages-artifact
+        with:
+          path: .
+          skip: "true"
