@@ -28,6 +28,7 @@ Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/open
 | npm semantic-release + `npm stage publish` | `.github/workflows/npm-release-staged.yml` | Reusable workflow |
 | Parse `/oc` only (custom workflow) | `opencode-resolver` | Node action |
 | pnpm + Node | `setup-pnpm` | Composite |
+| mise (pinned action + release) | `setup-mise` | Composite |
 | Supabase CLI in CI | `setup-supabase-cli` | Composite |
 | Upload Pages artifact after build | `publish-github-pages-artifact` | Composite |
 
@@ -117,6 +118,17 @@ jobs:
 
 Match `pnpm-version`, `node-version`, and `cache-dependency-path` to the target repo.
 
+### `setup-mise`
+
+Pins `jdx/mise-action` to a commit on `main` and the mise binary to a GitHub Release (immutable). Use instead of `jdx/mise-action@...` without a `version` input.
+
+```yaml
+steps:
+  - uses: hskksk/gh-actions/setup-mise@v1
+```
+
+Inputs: `version` (default `2026.10.2`), `install`, `cache`.
+
 ### `setup-supabase-cli`
 
 ```yaml
@@ -162,6 +174,10 @@ Caller builds, then uploads; separate job runs `actions/deploy-pages@v4`. Use `s
 ### `setup-pnpm`
 
 Inputs: `pnpm-version`, `node-version`, `cache`, `install`, `frozen-lockfile`, `cache-dependency-path`.
+
+### `setup-mise`
+
+Inputs: `version`, `install`, `cache`. Wraps `jdx/mise-action` with commit and release pins defined in this repo.
 
 ### `setup-supabase-cli`
 

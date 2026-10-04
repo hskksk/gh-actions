@@ -1,0 +1,29 @@
+name: Setup mise
+description: Install mise with pinned jdx/mise-action commit and mise release version
+branding:
+  icon: terminal
+  color: purple
+
+inputs:
+  version:
+    description: mise release version (GitHub Releases tag without the v prefix)
+    required: false
+    default: "2026.10.2"
+  install:
+    description: Run mise install after setup (see jdx/mise-action)
+    required: false
+    default: "true"
+  cache:
+    description: Enable mise-action cache
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install mise
+      uses: jdx/mise-action@88f13e0475d8b553967dd3816a34b6dcd3344c35
+      with:
+        version: ${{ inputs.version }}
+        install: ${{ inputs.install }}
+        cache: ${{ inputs.cache }}
