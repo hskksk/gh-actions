@@ -1,0 +1,132 @@
+# Reusable OpenCode job (slash commands, toolchain, anomalyco/opencode/github).
+# Caller keeps `on:` triggers; pass vars via inputs (e.g. trigger-allowlist from vars).
+name: OpenCode
+
+on:
+  workflow_call:
+    inputs:
+      toolchain:
+        description: pnpm or bun for build mode
+        type: string
+        default: pnpm
+      pnpm-version:
+        description: pnpm version when toolchain is pnpm
+        type: string
+        default: "9.14.0"
+      node-version:
+        description: Node version when toolchain is pnpm
+        type: string
+        default: "24"
+      bun-version:
+        description: Bun version when toolchain is bun
+        type: string
+        default: "1.3.0"
+      stub-opencode-auth:
+        description: Create empty opencode auth.json before build (eval/tests)
+        type: boolean
+        default: false
+      trigger-allowlist:
+        description: Value for OPENCODE_TRIGGER_ALLOWLIST (comma-separated logins)
+        type: string
+        default: ""
+      gh-actions-ref:
+        description: Git ref for hskksk/gh-actions actions (e.g. v1, main)
+        type: string
+        default: v1
+      opencode-action-ref:
+        description: Ref for anomalyco/opencode/github action
+        type: string
+        default: latest
+    secrets:
+      OPENCODE_API_KEY:
+        required: false
+      OPENCODE_GO_API_KEY:
+        required: false
+
+jobs:
+  opencode:
+    if: |
+      !contains(fromJSON('["cursor[bot]","github-actions[bot]","opencode-agent[bot]"]'), github.actor) &&
+      (
+        (
+          (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+          (contains(github.event.comment.body, '/oc') || contains(github.event.comment.body, '/opencode'))
+        ) ||
+        (
+          github.event_name == 'issues' &&
+          !github.event.issue.pull_request &&
+          (contains(github.event.issue.body || '', '/oc') || contains(github.event.issue.body || '', '/opencode'))
+        ) ||
+        (
+          github.event_name == 'pull_request' &&
+          (contains(github.event.pull_request.body || '', '/oc') || contains(github.event.pull_request.body || '', '/opencode'))
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Resolve slash command
+        id: slash
+        uses: hskksk/gh-actions/opencode-resolve-trigger@${{ inputs.gh-actions-ref }}
+        with:
+          trigger-allowlist: ${{ inputs.trigger-allowlist }}
+
+      - name: Prepare pnpm toolchain
+        if: steps.slash.outputs.mode == 'build' && inputs.toolchain == 'pnpm'
+        uses: hskksk/gh-actions/setup-pnpm@${{ inputs.gh-actions-ref }}
+        with:
+          pnpm-version: ${{ inputs.pnpm-version }}
+          node-version: ${{ inputs.node-version }}
+          cache: "true"
+          install: "true"
+          frozen-lockfile: "true"
+
+      - name: Prepare Bun toolchain
+        if: steps.slash.outputs.mode == 'build' && inputs.toolchain == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+
+      - name: Install dependencies (bun)
+        if: steps.slash.outputs.mode == 'build' && inputs.toolchain == 'bun'
+        run: bun install --frozen-lockfile
+
+      - name: Stub opencode auth for eval unit tests
+        if: steps.slash.outputs.mode == 'build' && inputs.stub-opencode-auth
+        run: |
+          mkdir -p ~/.local/share/opencode
+          echo '{}' > ~/.local/share/opencode/auth.json
+
+      - name: Run opencode (github-reply)
+        if: steps.slash.outputs.mode == 'reply'
+        uses: anomalyco/opencode/github@${{ inputs.opencode-action-ref }}
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+        with:
+          model: ${{ steps.slash.outputs.model }}
+          agent: github-reply
+          prompt: ${{ steps.slash.outputs.prompt }}
+
+      - name: Run opencode
+        if: steps.slash.outputs.mode == 'build'
+        uses: anomalyco/opencode/github@${{ inputs.opencode-action-ref }}
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          agent: github-actions
+          model: ${{ steps.slash.outputs.model }}
+          share: true
+          prompt: ${{ (github.event_name == 'issues' || github.event_name == 'pull_request') && steps.slash.outputs.prompt || '' }}

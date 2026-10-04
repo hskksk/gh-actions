@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  opencode-resolve-trigger:
+    name: opencode-resolve-trigger (test & build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: opencode-resolve-trigger
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./setup-pnpm
+        with:
+          pnpm-version: "9.14.0"
+          node-version: "24"
+          install: "false"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm run build
+
+      - name: Verify dist exists
+        run: test -f dist/index.js
+
+  smoke-setup-pnpm:
+    name: setup-pnpm smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./setup-pnpm
+        with:
+          pnpm-version: "9.14.0"
+          node-version: "24"
+          install: "false"
+
+      - run: pnpm --version
+      - run: node --version
