@@ -1,10 +1,16 @@
 name: Setup Supabase CLI
-description: Verify Supabase CI secrets and install the Supabase CLI
+description: Verify Supabase CI secrets and optionally install the Supabase CLI
 branding:
   icon: database
   color: green
 
 inputs:
+  install:
+    description: >-
+      Install the Supabase CLI via supabase/setup-cli. Set to false when the CLI
+      is already on PATH (e.g. from mise and .mise.toml).
+    required: false
+    default: "true"
   cli-version:
     description: Reserved for future pin; currently uses supabase/setup-cli@v2 default
     required: false
@@ -28,8 +34,10 @@ runs:
         if [ "${#missing[@]}" -gt 0 ]; then
           echo "::error::Missing required secrets for Supabase: ${missing[*]}"
           echo "Add them in GitHub → Settings → Secrets and variables → Actions."
+          echo "Map secrets to env vars on the job or workflow (secrets are not exposed automatically)."
           exit 1
         fi
 
     - name: Install Supabase CLI
+      if: inputs.install == 'true'
       uses: supabase/setup-cli@v2
