@@ -131,14 +131,27 @@ Inputs: `version` (default `2026.10.2`), `install`, `cache`.
 
 ### `setup-supabase-cli`
 
+Verifies `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, and `SUPABASE_DB_PASSWORD` are set as **environment variables** (map from `secrets` on the job or workflow). Optionally installs the CLI.
+
+**Secrets are not automatically env vars** — you must assign them explicitly, for example:
+
 ```yaml
-env:
-  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-steps:
-  - uses: hskksk/gh-actions/setup-supabase-cli@v1
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hskksk/gh-actions/setup-mise@v1
+      - uses: hskksk/gh-actions/setup-supabase-cli@v1
+        with:
+          install: "false"
 ```
+
+With **`install: "false"`**, only the secret guard runs; pin `supabase` in **`.mise.toml`** and install via `setup-mise`. Default **`install: "true"`** keeps `supabase/setup-cli@v2`.
 
 **Human:** Supabase token, project ref, DB password secrets. **Agent:** keep `pnpm run deploy` and project `.env` steps in the consumer workflow.
 
@@ -181,7 +194,9 @@ Inputs: `version`, `install`, `cache`. Wraps `jdx/mise-action` with commit and r
 
 ### `setup-supabase-cli`
 
-Requires the three `SUPABASE_*` env vars on the step; runs `supabase/setup-cli@v2`.
+Inputs: `install` (default `"true"`; set `"false"` when CLI comes from mise), `cli-version` (reserved).
+
+Requires the three `SUPABASE_*` **env vars** (map from secrets on the job/workflow). When `install` is `"true"`, runs `supabase/setup-cli@v2`.
 
 ### `publish-github-pages-artifact`
 
