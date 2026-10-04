@@ -29,14 +29,6 @@ on:
         description: Value for OPENCODE_TRIGGER_ALLOWLIST (comma-separated logins)
         type: string
         default: ""
-      gh-actions-ref:
-        description: Git ref for hskksk/gh-actions actions (e.g. v1, main)
-        type: string
-        default: v1
-      opencode-action-ref:
-        description: Ref for anomalyco/opencode/github action
-        type: string
-        default: latest
     secrets:
       OPENCODE_API_KEY:
         required: false
@@ -77,13 +69,13 @@ jobs:
 
       - name: Resolve slash command
         id: slash
-        uses: hskksk/gh-actions/opencode-resolve-trigger@${{ inputs.gh-actions-ref }}
+        uses: hskksk/gh-actions/opencode-resolve-trigger@v1
         with:
           trigger-allowlist: ${{ inputs.trigger-allowlist }}
 
       - name: Prepare pnpm toolchain
         if: steps.slash.outputs.mode == 'build' && inputs.toolchain == 'pnpm'
-        uses: hskksk/gh-actions/setup-pnpm@${{ inputs.gh-actions-ref }}
+        uses: hskksk/gh-actions/setup-pnpm@v1
         with:
           pnpm-version: ${{ inputs.pnpm-version }}
           node-version: ${{ inputs.node-version }}
@@ -109,7 +101,7 @@ jobs:
 
       - name: Run opencode (github-reply)
         if: steps.slash.outputs.mode == 'reply'
-        uses: anomalyco/opencode/github@${{ inputs.opencode-action-ref }}
+        uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
@@ -120,7 +112,7 @@ jobs:
 
       - name: Run opencode
         if: steps.slash.outputs.mode == 'build'
-        uses: anomalyco/opencode/github@${{ inputs.opencode-action-ref }}
+        uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}

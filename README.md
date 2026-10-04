@@ -102,8 +102,8 @@ jobs:
 | `bun-version` | `1.3.0` | For bun toolchain |
 | `stub-opencode-auth` | `false` | Empty `auth.json` before build |
 | `trigger-allowlist` | `""` | Allowlist variable value |
-| `gh-actions-ref` | `v1` | Ref for actions in this repo |
-| `opencode-action-ref` | `latest` | Ref for `anomalyco/opencode/github` |
+
+Internal steps pin `hskksk/gh-actions/*@v1` and `anomalyco/opencode/github@latest`. Bump the **reusable workflow ref** (`@v1`) when upgrading this repo.
 
 ## Development
 
