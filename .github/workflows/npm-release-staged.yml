@@ -1,20 +1,23 @@
 # Reusable semantic-release job with npm stage publish (OIDC).
 # Caller defines `on:` and keeps `.releaserc.json` in the package repo.
+# Toolchain versions come from the caller's `.mise.toml` (setup-mise).
 name: npm release (staged)
 
 on:
   workflow_call:
     inputs:
       pnpm-version:
-        description: pnpm version
+        description: Deprecated; pin pnpm in the caller `.mise.toml` instead
         type: string
-        required: true
+        required: false
+        default: ""
       node-version:
-        description: Node.js version (npm trusted publishing needs Node 22.14+)
+        description: Deprecated; pin node in the caller `.mise.toml` instead
         type: string
-        required: true
+        required: false
+        default: ""
       cache-dependency-path:
-        description: Lockfile path for setup-node pnpm cache
+        description: Unused (mise-action cache); kept for workflow_call compatibility
         type: string
         default: pnpm-lock.yaml
       run-typecheck:
@@ -48,14 +51,8 @@ jobs:
 
       # Do not set registry-url on setup-node — semantic-release + OIDC conflict.
       # https://semantic-release.org/recipes/ci-configurations/github-actions/
-      - name: Setup pnpm and Node.js
-        uses: hskksk/gh-actions/setup-pnpm@v1
-        with:
-          pnpm-version: ${{ inputs.pnpm-version }}
-          node-version: ${{ inputs.node-version }}
-          cache: "true"
-          cache-dependency-path: ${{ inputs.cache-dependency-path }}
-          install: "false"
+      - name: Setup toolchain (mise)
+        uses: hskksk/gh-actions/setup-mise@v1
 
       - name: Upgrade npm CLI for stage publish
         run: npm install -g npm@^11.15.0

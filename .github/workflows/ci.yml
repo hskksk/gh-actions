@@ -15,10 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install actionlint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- 1.7.7
-          sudo mv actionlint /usr/local/bin/
+      - uses: ./setup-mise
 
       - name: Lint workflows
         run: actionlint -color .github/workflows/*.yml
@@ -32,12 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./setup-pnpm
-        with:
-          pnpm-version: "9.14.0"
-          node-version: "24"
-          install: "false"
-          cache-dependency-path: opencode-resolver/pnpm-lock.yaml
+      - uses: ./setup-mise
 
       - run: pnpm install --frozen-lockfile
 
@@ -58,11 +50,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./setup-mise
-        with:
-          install: "false"
 
       - name: Assert pinned mise version
         run: mise --version | grep -F "2026.10.2"
+
+      - run: node --version
+      - run: pnpm --version
 
   smoke-setup-pnpm:
     name: setup-pnpm smoke

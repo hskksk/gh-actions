@@ -15,7 +15,7 @@ Use this section when wiring `hskksk/gh-actions` into a **different** repo. Do n
 1. **Identify the artifact** — reusable workflow (under `.github/workflows/` here) vs action (top-level folder).
 2. **Pin a ref** — `@v1` for production; `@main` or a SHA only for experiments.
 3. **Inspect the target repo** — `package.json`, `.github/workflows/`, `.releaserc.json`, `supabase/`, Pages settings.
-4. **Plan the diff** — add, replace, or delete workflows; align pnpm/Node/Bun versions with existing CI.
+4. **Plan the diff** — add, replace, or delete workflows; pin Node/pnpm/Bun (and related CLIs) in **`.mise.toml`**.
 5. **Separate human tasks** — API keys, npm trusted publishing, stage approve (2FA), Supabase dashboard, GitHub Pages environment, org Actions policy.
 
 Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/opencode-resolver@v1`), not npm install.
@@ -68,8 +68,6 @@ jobs:
     secrets: inherit
     with:
       toolchain: pnpm
-      pnpm-version: "9.14.0"
-      node-version: "24"
       trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
 ```
 
@@ -84,7 +82,7 @@ jobs:
 
 **Human:** create OpenCode keys → repo secrets; optional allowlist variable; confirm org allows `anomalyco/opencode`.
 
-**Agent:** remove old inline resolver; match toolchain versions; use `toolchain: bun` + `stub-opencode-auth: true` when needed (e.g. prism-style).
+**Agent:** remove old inline resolver; add **`.mise.toml`** with the caller’s toolchain; use `toolchain: bun` + `stub-opencode-auth: true` when needed (e.g. prism-style).
 
 ### `npm-release-staged` reusable workflow
 
@@ -102,13 +100,13 @@ jobs:
       pull-requests: write
       id-token: write
     with:
-      pnpm-version: "11.25.0"
-      node-version: "22.14.0"
+      run-typecheck: ""
+      run-build: ""
 ```
 
 **Human:** npm [Trusted Publishing](https://docs.npmjs.com/trusted-publishers); approve staged releases (2FA); Conventional Commits on `main`.
 
-**Agent:** keep `.releaserc.json` unless asked; override `run-typecheck` / `run-test` / `run-build` / `cache-dependency-path` if scripts differ; do not set `registry-url` on `setup-node` in the consumer job.
+**Agent:** keep `.releaserc.json` unless asked; add **`.mise.toml`** (include `npm` ≥ 11.15.0 for stage publish when using this workflow); override `run-typecheck` / `run-test` / `run-build` if scripts differ.
 
 ### `opencode-resolver` (action only)
 
@@ -116,18 +114,22 @@ jobs:
 
 ### `setup-pnpm`
 
-Match `pnpm-version`, `node-version`, and `cache-dependency-path` to the target repo.
+Legacy composite (pnpm/action-setup + setup-node). Prefer **`setup-mise`** and a committed **`.mise.toml`** in consumer repos. Still supported for older workflows.
 
 ### `setup-mise`
 
-Pins `jdx/mise-action` to a commit on `main` and the mise binary to a GitHub Release (immutable). Use instead of `jdx/mise-action@...` without a `version` input.
+Default for CI in hskksk repos. Installs tools from the checked-out **`.mise.toml`**. Pins `jdx/mise-action` to a commit on `main` and the mise binary to a GitHub Release (immutable).
 
 ```yaml
 steps:
+  - uses: actions/checkout@v4
   - uses: hskksk/gh-actions/setup-mise@v1
+  - run: pnpm install --frozen-lockfile
 ```
 
-Inputs: `version` (default `2026.10.2`), `install`, `cache`.
+Reusable workflows **`opencode.yml`** and **`npm-release-staged.yml`** call `setup-mise` on the caller repository (after checkout).
+
+Inputs: `version` (mise release, default `2026.10.2`), `install`, `cache`.
 
 ### `setup-supabase-cli`
 
@@ -169,7 +171,7 @@ Caller builds, then uploads; separate job runs `actions/deploy-pages@v4`. Use `s
 | API keys / npm tokens | | ✓ |
 | npm trusted publisher + stage approve | | ✓ |
 | Supabase / Pages / org Actions policy | | ✓ |
-| Version pins from target repo CI | ✓ | |
+| Version pins in caller **`.mise.toml`** | ✓ | |
 
 ---
 
@@ -211,7 +213,10 @@ Inputs: `path`, `skip` (default `false`).
 
 ## Development (this repo)
 
+Root **`.mise.toml`** pins Node, pnpm, npm, Bun, and actionlint. CI uses `./setup-mise`.
+
 ```bash
+mise install
 cd opencode-resolver && pnpm install && pnpm test && pnpm run build
 ```
 
