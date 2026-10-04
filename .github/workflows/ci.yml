@@ -51,6 +51,19 @@ jobs:
       - name: Verify action metadata
         run: test -f action.yml
 
+  smoke-setup-mise:
+    name: setup-mise smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./setup-mise
+        with:
+          install: "false"
+
+      - name: Assert pinned mise version
+        run: mise --version | grep -F "2026.10.2"
+
   smoke-setup-pnpm:
     name: setup-pnpm smoke
     runs-on: ubuntu-latest
