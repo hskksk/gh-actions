@@ -125,16 +125,6 @@ The **caller job** must grant **`id-token: write` only** (same as the reusable w
 |----------|---------|
 | `OPENCODE_TRIGGER_ALLOWLIST` | Extra allowed trigger logins |
 
-#### Build-mode prompt layers
-
-OpenCode still appends its own GitHub context (`opencode github run`, layer 1). The reusable workflow composes the Action `prompt` input as:
-
-1. **Preset** (in `.github/workflows/opencode.yml`) — shared CI / non-interactive instructions  
-2. **`with.prompt`** on the consumer wrapper — repo-specific instructions  
-3. **`prompt`** from `opencode-resolver` — slash trigger text (same as before; not split from comment/issue body)
-
-No `.opencode/agents/github-actions` agent is required; the default OpenCode `build` agent is used.
-
 **Human:** install [OpenCode GitHub App](https://github.com/apps/opencode-agent) on the repo; create OpenCode API keys → repo secrets; optional allowlist variable; confirm org allows `anomalyco/opencode`.
 
 **Agent:** remove old inline resolver; add **`.mise.toml`** with the caller’s toolchain; use `toolchain: bun` + `stub-opencode-auth: true` when needed (e.g. prism-style).
