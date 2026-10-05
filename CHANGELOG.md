@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/hskksk/gh-actions/compare/v1.1.0...v1.2.0) (2026-10-05)
+
+
+### Features
+
+* **opencode:** progress comments via OIDC App token ([#10](https://github.com/hskksk/gh-actions/issues/10)) ([1605ba4](https://github.com/hskksk/gh-actions/commit/1605ba4e5ad14400e5f03cc4444dac42fc51403e))
+
 # [1.1.0](https://github.com/hskksk/gh-actions/compare/v1.0.1...v1.1.0) (2026-10-05)
 
 
