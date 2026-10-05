@@ -1,0 +1,32 @@
+# Consumer wrapper for hskksk/gh-actions reusable OpenCode workflow.
+# Copy this file to YOUR_REPO/.github/workflows/opencode.yml (filename may differ).
+#
+# Before enabling:
+# - Install https://github.com/apps/opencode-agent on the repository
+# - Add OPENCODE_API_KEY and OPENCODE_GO_API_KEY as Actions secrets
+# - Commit .mise.toml with node + pnpm or bun (setup-mise installs from it)
+# - Optional: repo variable OPENCODE_TRIGGER_ALLOWLIST (comma-separated logins)
+#
+# Caller job permissions must be exactly id-token: write (OIDC → App installation token).
+
+name: opencode
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  opencode:
+    permissions:
+      id-token: write
+    uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
+    secrets: inherit
+    with:
+      toolchain: pnpm
+      trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}

@@ -48,7 +48,7 @@ Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/open
 
 | User intent | Use | Type |
 |-------------|-----|------|
-| OpenCode on `/oc` | `.github/workflows/opencode.yml` | Reusable workflow |
+| OpenCode on `/oc` | `.github/workflows/opencode.yml` + [`examples/opencode-consumer.yml`](examples/opencode-consumer.yml) | Reusable workflow |
 | npm semantic-release + `npm stage publish` | `.github/workflows/npm-release-staged.yml` | Reusable workflow |
 | Parse `/oc` only (custom workflow) | `opencode-resolver` | Node action |
 | pnpm + Node | `setup-pnpm` | Composite |
@@ -73,7 +73,12 @@ Triggers are **not** included—you define `on:`. Job flow: checkout → `openco
 
 **Inspect target:** existing `opencode.yml` (replace inline `github-script`), lockfile, pnpm vs Bun.
 
+#### Consumer template (copy into your repo)
+
+Canonical file: **[`examples/opencode-consumer.yml`](examples/opencode-consumer.yml)** — copy to `.github/workflows/opencode.yml` and open a PR. Do not edit the reusable workflow in `gh-actions`; only add this thin wrapper in the consumer repo.
+
 ```yaml
+# Same as examples/opencode-consumer.yml — keep in sync when adopting
 name: opencode
 
 on:
@@ -97,7 +102,19 @@ jobs:
       trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
 ```
 
-The **caller job** must grant `id-token: write` (same as the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
+Use `toolchain: bun` when the consumer repo uses Bun. Pin Node/pnpm/Bun in the consumer **`.mise.toml`** (not deprecated `pnpm-version` / `node-version` inputs on `with:`).
+
+#### Common mistakes (caller wrapper)
+
+| Mistake | Why it breaks |
+|--------|----------------|
+| No `permissions` on the `opencode` job | Reusable workflow cannot get `id-token: write`; workflow file validation fails |
+| `issues: write` / `pull-requests: write` on the caller job | Unnecessary for OIDC path; copy the template instead |
+| Workflow-level `permissions: contents: read` only | Caps the job token; caller job still needs `id-token: write` on the **job** |
+| `GITHUB_TOKEN` + `use_github_token` without switching the reusable workflow | This template uses OIDC + App; do not mix modes |
+| Missing `.mise.toml` in the consumer repo | `setup-mise` has nothing to install for build mode |
+
+The **caller job** must grant **`id-token: write` only** (same as the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
 
 | Secret | Purpose |
 |--------|---------|
