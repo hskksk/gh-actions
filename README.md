@@ -109,7 +109,7 @@ Use `toolchain: bun` when the consumer repo uses Bun. Pin Node/pnpm/Bun in the c
 | Mistake | Why it breaks |
 |--------|----------------|
 | No `permissions` on the `opencode` job | Reusable workflow cannot get `id-token: write`; workflow file validation fails |
-| `issues: write` / `pull-requests: write` on the caller job | Unnecessary for OIDC path; copy the template instead |
+| `issues: write` / `pull-requests: write` on the caller job | Unnecessary; acknowledgment comments use the OpenCode App token via OIDC |
 | Workflow-level `permissions: contents: read` only | Caps the job token; caller job still needs `id-token: write` on the **job** |
 | `GITHUB_TOKEN` + `use_github_token` without switching the reusable workflow | This template uses OIDC + App; do not mix modes |
 | Missing `.mise.toml` in the consumer repo | `setup-mise` has nothing to install for build mode |

@@ -1,11 +1,7 @@
-export const DEFAULT_MODEL = "opencode/big-pickle";
+import type { ModelCatalog } from "./model-catalog.js";
+import { ALLOWED_MODEL, DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
 
-export const MODEL_ALIASES: Record<string, string> = {
-  "big-pickle": DEFAULT_MODEL,
-  pickle: DEFAULT_MODEL,
-};
-
-export const ALLOWED_MODEL = /^(opencode|opencode-go)\/[a-z0-9][a-z0-9._-]*$/i;
+export { ALLOWED_MODEL, DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
 
 export const ALL_CMDS = [
   "/opencode-issue",
@@ -119,27 +115,34 @@ export function detectMode(rawBody: string, eventName: string): SlashMode {
   return "";
 }
 
+export function resolveModelToken(
+  raw: string,
+  catalog: ModelCatalog,
+  defaultModel: string = DEFAULT_MODEL,
+  onWarning?: (message: string) => void,
+  positional = false,
+): { model: string; explicit: boolean } {
+  const token = raw.trim().replace(/^["']|["']$/g, "");
+  if (!token) return { model: defaultModel, explicit: false };
+  const resolved = positional ? catalog.resolvePositional(token) : catalog.resolve(token);
+  if (resolved) return { model: resolved, explicit: true };
+  if (!positional) {
+    onWarning?.(`Unknown model "${token}"; using ${defaultModel}.`);
+  }
+  return { model: defaultModel, explicit: false };
+}
+
+/** @deprecated Use resolveModelToken with a model catalog */
 export function normalizeModelId(
   raw: string,
   defaultModel: string = DEFAULT_MODEL,
   onWarning?: (message: string) => void,
 ): string {
-  const token = raw.trim().replace(/^["']|["']$/g, "");
-  if (!token) return defaultModel;
-  const alias = MODEL_ALIASES[token.toLowerCase()];
-  if (alias) return alias;
-  if (token.includes("/")) {
-    if (!ALLOWED_MODEL.test(token)) {
-      onWarning?.(`Invalid model "${token}"; using ${defaultModel}.`);
-      return defaultModel;
-    }
-    return token;
-  }
-  if (/^[a-z0-9][a-z0-9._-]*$/i.test(token)) {
-    return `opencode-go/${token}`;
-  }
-  onWarning?.(`Invalid model "${token}"; using ${defaultModel}.`);
-  return defaultModel;
+  const aliasOnly: ModelCatalog = {
+    resolve: (token) => MODEL_ALIASES[token.toLowerCase()] ?? null,
+    resolvePositional: (token) => MODEL_ALIASES[token.toLowerCase()] ?? null,
+  };
+  return resolveModelToken(raw, aliasOnly, defaultModel, onWarning).model;
 }
 
 export function findTriggerLine(body: string, eventName: string): string {
@@ -161,30 +164,77 @@ export function findTriggerLine(body: string, eventName: string): string {
   return "";
 }
 
-export function looksLikeModelToken(token: string): boolean {
-  if (!token || token.startsWith("@") || token.startsWith("#")) return false;
-  if (MODEL_ALIASES[token.toLowerCase()]) return true;
-  if (token.includes("/")) return ALLOWED_MODEL.test(token);
-  return /^[a-z0-9][a-z0-9._-]*$/i.test(token);
+function stripCommandPrefix(line: string): string {
+  const trimmed = line.trim();
+  const cmds = [...ALL_CMDS].sort((a, b) => b.length - a.length);
+  for (const cmd of cmds) {
+    if (trimmed === cmd) return "";
+    if (trimmed.startsWith(`${cmd} `)) {
+      return trimmed.slice(cmd.length + 1).trim();
+    }
+    const idx = trimmed.toLowerCase().indexOf(cmd);
+    if (idx === -1) continue;
+    const beforeOk = idx === 0 || trimmed[idx - 1] === " " || trimmed[idx - 1] === "\n";
+    const end = idx + cmd.length;
+    const afterOk =
+      end === trimmed.length || trimmed[end] === " " || trimmed[end] === "\n" || trimmed[end] === "\r";
+    if (beforeOk && afterOk) {
+      return trimmed.slice(end).trim();
+    }
+  }
+  return trimmed;
+}
+
+export function extractInstruction(
+  body: string,
+  eventName: string,
+  cmdLine: string,
+  cleanedLine: string,
+): string {
+  const linePart = stripCommandPrefix(cleanedLine);
+  const lines = body.split(/\r?\n/);
+  const isComment =
+    eventName === "issue_comment" || eventName === "pull_request_review_comment";
+
+  let foundIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (isComment) {
+      if (line === cmdLine || line.trim() === cmdLine.trim()) {
+        foundIndex = i;
+        break;
+      }
+    } else if (line.trim() === cmdLine.trim() || line.trim() === cleanedLine.trim()) {
+      foundIndex = i;
+      break;
+    }
+  }
+
+  const tail = foundIndex >= 0 ? lines.slice(foundIndex + 1).join("\n").trim() : "";
+  return [linePart, tail].filter((part) => part.length > 0).join("\n").trim();
 }
 
 export function parseModelFromBody(
   body: string,
   eventName: string,
+  catalog: ModelCatalog,
   defaultModel: string = DEFAULT_MODEL,
   onWarning?: (message: string) => void,
-): { model: string; prompt: string } {
+): { model: string; prompt: string; instruction: string; modelExplicit: boolean } {
   const cmdLine = findTriggerLine(body, eventName);
   if (!cmdLine) {
-    return { model: defaultModel, prompt: body };
+    return { model: defaultModel, prompt: body, instruction: body.trim(), modelExplicit: false };
   }
 
   let model = defaultModel;
+  let modelExplicit = false;
   let cleanedLine = cmdLine;
 
   const flagMatch = cmdLine.match(/(?:^|\s)(?:--model|-m|model:)\s+(\S+)/i);
   if (flagMatch) {
-    model = normalizeModelId(flagMatch[1], defaultModel, onWarning);
+    const resolved = resolveModelToken(flagMatch[1], catalog, defaultModel, onWarning);
+    model = resolved.model;
+    modelExplicit = resolved.explicit;
     cleanedLine = cmdLine
       .replace(/(?:^|\s)(?:--model|-m|model:)\s+\S+/i, "")
       .replace(/\s{2,}/g, " ")
@@ -194,18 +244,19 @@ export function parseModelFromBody(
       const escaped = cmd.replace(/\//g, "\\/");
       const re = new RegExp(`(${escaped})\\s+(\\S+)`, "i");
       const match = cmdLine.match(re);
-      if (match && looksLikeModelToken(match[2])) {
-        model = normalizeModelId(match[2], defaultModel, onWarning);
-        cleanedLine = cmdLine.replace(re, "$1").replace(/\s{2,}/g, " ").trim();
-        break;
-      }
+      if (!match) continue;
+      const resolved = resolveModelToken(match[2], catalog, defaultModel, onWarning, true);
+      if (!resolved.explicit) break;
+      model = resolved.model;
+      modelExplicit = true;
+      cleanedLine = cmdLine.replace(re, "$1").replace(/\s{2,}/g, " ").trim();
+      break;
     }
   }
 
-  if (cleanedLine === cmdLine) {
-    return { model, prompt: body };
-  }
+  const instruction = extractInstruction(body, eventName, cmdLine, cleanedLine);
+  const prompt =
+    cleanedLine === cmdLine ? body : body.includes(cmdLine) ? body.replace(cmdLine, cleanedLine) : body;
 
-  const prompt = body.includes(cmdLine) ? body.replace(cmdLine, cleanedLine) : body;
-  return { model, prompt };
+  return { model, prompt, instruction, modelExplicit };
 }

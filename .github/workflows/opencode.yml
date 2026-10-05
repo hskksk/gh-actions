@@ -30,11 +30,26 @@ on:
         description: Value for OPENCODE_TRIGGER_ALLOWLIST (comma-separated logins)
         type: string
         default: ""
+      prompt:
+        description: Optional extra instructions from the consumer workflow (merged into OpenCode PROMPT)
+        type: string
+        default: ""
     secrets:
       OPENCODE_API_KEY:
         required: false
       OPENCODE_GO_API_KEY:
         required: false
+
+env:
+  # gh-actions preset (layer 3) — merged into anomalyco/opencode/github `prompt` → PROMPT env
+  OPENCODE_GH_ACTIONS_PRESET: |
+    You run inside a **GitHub Actions** job (`CI=true`, non-interactive). Do not ask questions; permission prompts are denied.
+
+    - Work in the checked-out repository. Use `/tmp` only for ephemeral scratch files.
+    - Dependencies are installed by the workflow before OpenCode starts; prefer repo scripts over ad-hoc probes.
+    - Git author identity is already configured. Reuse it for commits; do not invent noreply emails.
+    - After you finish, OpenCode infrastructure handles **git push and PR creation** automatically. Do not warn about tokens or tell the user to open PRs manually.
+    - If the user instruction is empty or only `/oc`, summarize the thread or review the linked issue/PR and act on what is asked in context.
 
 jobs:
   opencode:
@@ -58,7 +73,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # OIDC → OpenCode GitHub App installation token (anomalyco/opencode/github default).
-    # GitHub API read/write for issues/PRs uses that token, not github.token scopes.
     permissions:
       id-token: write
     steps:
@@ -69,7 +83,7 @@ jobs:
 
       - name: Parse OpenCode slash command
         id: slash
-        uses: hskksk/gh-actions/opencode-resolver@v1
+        uses: ./opencode-resolver
         with:
           trigger-allowlist: ${{ inputs.trigger-allowlist }}
 
@@ -109,7 +123,13 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
         with:
-          agent: github-actions
+          # → MODEL env inside action (opencode github run)
           model: ${{ steps.slash.outputs.model }}
           share: true
-          prompt: ${{ (github.event_name == 'issues' || github.event_name == 'pull_request') && steps.slash.outputs.prompt || '' }}
+          # → PROMPT env: preset (workflow env) + consumer input + slash trigger text
+          prompt: |
+            ${{ env.OPENCODE_GH_ACTIONS_PRESET }}
+
+            ${{ inputs.prompt }}
+
+            ${{ steps.slash.outputs.prompt }}

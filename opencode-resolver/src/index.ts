@@ -1,5 +1,8 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
+import { formatAcknowledgment, postAcknowledgmentComment } from "./ack-comment.js";
+import { getGithubAppToken } from "./github-app-token.js";
+import { fetchModelCatalog } from "./model-catalog.js";
 import {
   commentActorAuthorized,
   detectMode,
@@ -59,6 +62,7 @@ async function run(): Promise<void> {
   const token = core.getInput("github-token", { required: true });
   const allowlist = parseAllowlist(core.getInput("trigger-allowlist") || "");
   const defaultModel = core.getInput("default-model") || "opencode/big-pickle";
+  const postModelAck = core.getBooleanInput("post-model-ack");
   const onWarning = (message: string) => core.warning(message);
 
   const eventName = context.eventName;
@@ -86,11 +90,41 @@ async function run(): Promise<void> {
     return;
   }
 
-  const { model, prompt } = parseModelFromBody(body, eventName, defaultModel, onWarning);
+  const catalog = await fetchModelCatalog();
+  const { model, prompt, instruction, modelExplicit } = parseModelFromBody(
+    body,
+    eventName,
+    catalog,
+    defaultModel,
+    onWarning,
+  );
   core.info(`OpenCode model: ${model}`);
   core.setOutput("mode", mode);
   core.setOutput("prompt", prompt);
   core.setOutput("model", model);
+  core.setOutput("instruction", instruction);
+  core.setOutput("model-explicit", modelExplicit ? "true" : "false");
+
+  if (postModelAck && modelExplicit) {
+    const oidcBaseUrl = core.getInput("oidc-base-url") || "https://api.opencode.ai";
+    const ackBody = formatAcknowledgment(model, instruction);
+    try {
+      const appToken = await getGithubAppToken(oidcBaseUrl);
+      const octokit = getOctokit(appToken);
+      await postAcknowledgmentComment(
+        octokit,
+        context.repo.owner,
+        context.repo.repo,
+        eventName,
+        context.payload as { issue?: { number: number }; pull_request?: { number: number } },
+        ackBody,
+      );
+      core.info("Posted model acknowledgment comment.");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      core.warning(`Could not post model acknowledgment comment: ${message}`);
+    }
+  }
 }
 
 run().catch((error: unknown) => {

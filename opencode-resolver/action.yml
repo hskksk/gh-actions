@@ -17,6 +17,14 @@ inputs:
     description: Model when none is specified
     required: false
     default: opencode/big-pickle
+  post-model-ack:
+    description: Post a short acknowledgment comment when a catalog model is specified
+    required: false
+    default: "true"
+  oidc-base-url:
+    description: OpenCode OIDC exchange API base URL (default https://api.opencode.ai)
+    required: false
+    default: "https://api.opencode.ai"
 
 outputs:
   mode:
@@ -24,7 +32,11 @@ outputs:
   model:
     description: Resolved model id
   prompt:
-    description: Prompt text passed to OpenCode
+    description: Trigger text for OpenCode (model tokens stripped from the command line when present)
+  instruction:
+    description: User instruction text after the slash command (for acknowledgment)
+  model-explicit:
+    description: true when the user specified a model from the OpenCode catalog
 
 runs:
   using: node24
