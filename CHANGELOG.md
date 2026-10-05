@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/hskksk/gh-actions/compare/v1.0.0...v1.0.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **opencode:** align reusable workflow with OIDC + App token path ([#7](https://github.com/hskksk/gh-actions/issues/7)) ([cca6c17](https://github.com/hskksk/gh-actions/commit/cca6c179d2b2e389f706b57243bea9fa01a8b8aa))
+
 # 1.0.0 (2026-10-05)
 
 
