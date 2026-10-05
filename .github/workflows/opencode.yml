@@ -1,6 +1,9 @@
 # Reusable OpenCode job (slash commands, toolchain, anomalyco/opencode/github).
 # Caller keeps `on:` triggers; pass vars via inputs (e.g. trigger-allowlist from vars).
 # Toolchain versions come from the caller's `.mise.toml` (setup-mise).
+#
+# /oc build: github-actions agent posts phase comments via scripts/opencode-github-progress.sh
+# (開始・調査・下書きPR・実装・検証・提出). Draft PR early so another run can continue.
 name: OpenCode
 
 on:
@@ -50,6 +53,41 @@ env:
     - Git author identity is already configured. Reuse it for commits; do not invent noreply emails.
     - After you finish, OpenCode infrastructure handles **git push and PR creation** automatically. Do not warn about tokens or tell the user to open PRs manually.
     - If the user instruction is empty or only `/oc`, summarize the thread or review the linked issue/PR and act on what is asked in context.
+    - The job **times out after 30 minutes**. Avoid finishing with no branch and no PR when the task needs repo changes.
+    - Skills often say “verify, then open a PR”; **in this job, open or update a draft PR first**, then verify if time remains.
+
+    ## PR and handoff (when the task changes the repo)
+
+    Another `/oc` run may continue on the same branch/PR. Prefer incremental, visible progress.
+
+    1. **Branch early** — After scope is clear (`調査`), branch off `origin/main` or continue the trigger PR branch.
+    2. **Draft PR without waiting for full verification** — Commit, push, and open or update a **draft PR** as soon as there is meaningful WIP.
+    3. **Keep pushing** — After substantial edits, commit and push again; note WIP gaps in the PR body.
+    4. **Verify after, if time remains** — Run relevant checks after the draft exists; leave notes on the PR if checks are slow.
+    5. **When time is low** — Push current commits, post `提出` on the trigger thread with the PR link, and say what a follow-up should do.
+
+    Use `gh pr create --draft` unless the user asked for ready-for-review.
+
+    ## Progress on the triggering thread
+
+    Post brief status on the **same issue or PR** that started this run. The workflow staged `scripts/opencode-github-progress.sh` and exported `GH_TOKEN` (OpenCode GitHub App via OIDC, same as model ack):
+
+    ```bash
+    scripts/opencode-github-progress.sh <phase> <one or two short sentences>
+    ```
+
+    Comment **once after each** phase completes (skip only if it truly did not apply):
+
+    | Phase | When |
+    | --- | --- |
+    | `開始` | Right after you understand the request (before heavy edits) |
+    | `調査` | Scope and approach are clear |
+    | `下書きPR` | First draft PR is opened or updated with WIP |
+    | `実装` | Main edits for this pass are done (push again if you changed files after `下書きPR`) |
+    | `検証` | Relevant checks ran when time allowed (optional if draft exists and time ran out) |
+    | `提出` | Final push; PR link; or explain why you are stopping without a PR |
+
+    Keep each comment to 1–3 lines; link the PR in `提出` only.
 
 jobs:
   opencode:
@@ -72,7 +110,7 @@ jobs:
       )
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # OIDC → OpenCode GitHub App installation token (anomalyco/opencode/github default).
+    # OIDC → OpenCode GitHub App (resolver ack, progress comments, anomalyco/opencode/github).
     permissions:
       id-token: write
     steps:
@@ -105,6 +143,10 @@ jobs:
           mkdir -p ~/.local/share/opencode
           echo '{}' > ~/.local/share/opencode/auth.json
 
+      - name: Stage OpenCode progress helper
+        if: steps.slash.outputs.mode == 'build'
+        uses: ./opencode-github-progress
+
       - name: Run opencode (github-reply)
         if: steps.slash.outputs.mode == 'reply'
         uses: anomalyco/opencode/github@latest
@@ -122,7 +164,9 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+          GH_TOKEN: ${{ env.GH_TOKEN }}
         with:
+          agent: github-actions
           # → MODEL env inside action (opencode github run)
           model: ${{ steps.slash.outputs.model }}
           share: true

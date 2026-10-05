@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Post a short progress comment on the GitHub issue/PR that triggered opencode.
+# Phases: 開始, 調査, 下書きPR, 実装, 検証, 提出
+# Usage: scripts/opencode-github-progress.sh <phase> <message...>
+set -euo pipefail
+
+if [[ "${1:-}" == "" ]]; then
+  echo "usage: opencode-github-progress.sh <phase> <message...>" >&2
+  exit 1
+fi
+
+phase="$1"
+shift
+
+if [[ ! -f "${GITHUB_EVENT_PATH:-}" ]]; then
+  echo "GITHUB_EVENT_PATH is not set or missing" >&2
+  exit 1
+fi
+
+number="$(jq -r '.issue.number // .pull_request.number // empty' "$GITHUB_EVENT_PATH")"
+if [[ -z "$number" ]]; then
+  echo "Could not resolve issue/PR number from event payload" >&2
+  exit 1
+fi
+
+repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is not set}"
+body="**OpenCode (${phase})** $*"
+
+if [[ -z "${GH_TOKEN:-}" ]]; then
+  echo "GH_TOKEN is not set (expected OpenCode GitHub App token from OIDC exchange)" >&2
+  exit 1
+fi
+
+GH_TOKEN="$GH_TOKEN" gh issue comment "$number" --repo "$repo" --body "$body"
