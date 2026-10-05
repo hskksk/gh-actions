@@ -24,9 +24,7 @@ outputs:
   model:
     description: Resolved model id
   prompt:
-    description: Full trigger body with model tokens stripped from the command line (legacy)
-  task:
-    description: User instructions after the slash command (and following lines)
+    description: Trigger text for OpenCode (model tokens stripped from the command line when present)
 
 runs:
   using: node24

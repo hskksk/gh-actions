@@ -111,7 +111,7 @@ jobs:
         id: oc_user_prompt
         env:
           CALLER_PROMPT: ${{ inputs.prompt }}
-          TASK: ${{ steps.slash.outputs.task }}
+          SLASH_PROMPT: ${{ steps.slash.outputs.prompt }}
         run: |
           preset="$(cat <<'EOF'
 You run inside a **GitHub Actions** job (`CI=true`, non-interactive). Do not ask questions; permission prompts are denied.
@@ -129,10 +129,10 @@ EOF
 
           ${CALLER_PROMPT}"
           fi
-          if [ -n "$TASK" ]; then
+          if [ -n "$SLASH_PROMPT" ]; then
             combined="${combined}
 
-          ${TASK}"
+          ${SLASH_PROMPT}"
           fi
           delimiter="$(openssl rand -hex 16)"
           {

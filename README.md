@@ -131,7 +131,7 @@ OpenCode still appends its own GitHub context (`opencode github run`, layer 1). 
 
 1. **Preset** (in `.github/workflows/opencode.yml`) — shared CI / non-interactive instructions  
 2. **`with.prompt`** on the consumer wrapper — repo-specific instructions  
-3. **`task`** from `opencode-resolver` — text after `/oc` (and following lines)
+3. **`prompt`** from `opencode-resolver` — slash trigger text (same as before; not split from comment/issue body)
 
 No `.opencode/agents/github-actions` agent is required; the default OpenCode `build` agent is used.
 
