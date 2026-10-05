@@ -2,7 +2,7 @@
 # Caller keeps `on:` triggers; pass vars via inputs (e.g. trigger-allowlist from vars).
 # Toolchain versions come from the caller's `.mise.toml` (setup-mise).
 #
-# /oc build: github-actions agent posts phase comments via scripts/opencode-github-progress.sh
+# /oc build: OpenCode posts phase comments via scripts/opencode-github-progress.sh
 # (開始・調査・下書きPR・実装・検証・提出). Draft PR early so another run can continue.
 name: OpenCode
 
@@ -165,7 +165,6 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
         with:
-          agent: github-actions
           # → MODEL env inside action (opencode github run)
           model: ${{ steps.slash.outputs.model }}
           share: true

@@ -69,7 +69,7 @@ The reusable workflow **file name here** for OpenCode is `opencode.yml`. The con
 
 **`uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1`**
 
-Triggers are **not** included—you define `on:`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → pnpm or Bun (build mode) → stage `scripts/opencode-github-progress.sh` → `anomalyco/opencode/github@latest` with `agent: github-actions` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Progress comments use `GH_TOKEN` from inside the OpenCode run.
+Triggers are **not** included—you define `on:`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → pnpm or Bun (build mode) → stage `scripts/opencode-github-progress.sh` → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Progress comments use `GH_TOKEN` from inside the OpenCode run.
 
 **Inspect target:** existing `opencode.yml` (replace inline `github-script`), lockfile, pnpm vs Bun.
 
