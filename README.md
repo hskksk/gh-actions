@@ -89,9 +89,6 @@ on:
 jobs:
   opencode:
     permissions:
-      contents: read
-      issues: read
-      pull-requests: read
       id-token: write
     uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
     secrets: inherit
@@ -100,7 +97,7 @@ jobs:
       trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
 ```
 
-The **caller job** must grant these permissions (match the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
+The **caller job** must grant `id-token: write` (same as the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
 
 | Secret | Purpose |
 |--------|---------|

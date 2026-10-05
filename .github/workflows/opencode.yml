@@ -57,13 +57,10 @@ jobs:
       )
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # OIDC → OpenCode GitHub App token (default anomalyco/opencode/github path).
-    # Issue/PR writes use the installation token, not github.token.
+    # OIDC → OpenCode GitHub App installation token (anomalyco/opencode/github default).
+    # GitHub API read/write for issues/PRs uses that token, not github.token scopes.
     permissions:
       id-token: write
-      contents: read
-      pull-requests: read
-      issues: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
