@@ -120,12 +120,15 @@ export function resolveModelToken(
   catalog: ModelCatalog,
   defaultModel: string = DEFAULT_MODEL,
   onWarning?: (message: string) => void,
+  positional = false,
 ): { model: string; explicit: boolean } {
   const token = raw.trim().replace(/^["']|["']$/g, "");
   if (!token) return { model: defaultModel, explicit: false };
-  const resolved = catalog.resolve(token);
+  const resolved = positional ? catalog.resolvePositional(token) : catalog.resolve(token);
   if (resolved) return { model: resolved, explicit: true };
-  onWarning?.(`Unknown model "${token}"; using ${defaultModel}.`);
+  if (!positional) {
+    onWarning?.(`Unknown model "${token}"; using ${defaultModel}.`);
+  }
   return { model: defaultModel, explicit: false };
 }
 
@@ -135,8 +138,11 @@ export function normalizeModelId(
   defaultModel: string = DEFAULT_MODEL,
   onWarning?: (message: string) => void,
 ): string {
-  return resolveModelToken(raw, { resolve: (token) => MODEL_ALIASES[token.toLowerCase()] ?? null }, defaultModel, onWarning)
-    .model;
+  const aliasOnly: ModelCatalog = {
+    resolve: (token) => MODEL_ALIASES[token.toLowerCase()] ?? null,
+    resolvePositional: (token) => MODEL_ALIASES[token.toLowerCase()] ?? null,
+  };
+  return resolveModelToken(raw, aliasOnly, defaultModel, onWarning).model;
 }
 
 export function findTriggerLine(body: string, eventName: string): string {
@@ -239,7 +245,7 @@ export function parseModelFromBody(
       const re = new RegExp(`(${escaped})\\s+(\\S+)`, "i");
       const match = cmdLine.match(re);
       if (!match) continue;
-      const resolved = resolveModelToken(match[2], catalog, defaultModel, onWarning);
+      const resolved = resolveModelToken(match[2], catalog, defaultModel, onWarning, true);
       if (!resolved.explicit) break;
       model = resolved.model;
       modelExplicit = true;

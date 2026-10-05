@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { formatAcknowledgment, postAcknowledgmentComment } from "./ack-comment.js";
+import { getGithubAppToken } from "./github-app-token.js";
 import { fetchModelCatalog } from "./model-catalog.js";
 import {
   commentActorAuthorized,
@@ -105,9 +106,11 @@ async function run(): Promise<void> {
   core.setOutput("model-explicit", modelExplicit ? "true" : "false");
 
   if (postModelAck && modelExplicit) {
-    const octokit = getOctokit(token);
+    const oidcBaseUrl = core.getInput("oidc-base-url") || "https://api.opencode.ai";
     const ackBody = formatAcknowledgment(model, instruction);
     try {
+      const appToken = await getGithubAppToken(oidcBaseUrl);
+      const octokit = getOctokit(appToken);
       await postAcknowledgmentComment(
         octokit,
         context.repo.owner,

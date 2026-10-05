@@ -31,7 +31,7 @@ on:
         type: string
         default: ""
       prompt:
-        description: Optional extra instructions from the consumer workflow (appended before /oc task text)
+        description: Optional extra instructions from the consumer workflow (appended before resolver prompt)
         type: string
         default: ""
     secrets:
@@ -65,8 +65,6 @@ jobs:
     # GitHub API read/write for issues/PRs uses that token, not github.token scopes.
     permissions:
       id-token: write
-      issues: write
-      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

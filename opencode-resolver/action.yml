@@ -21,6 +21,10 @@ inputs:
     description: Post a short acknowledgment comment when a catalog model is specified
     required: false
     default: "true"
+  oidc-base-url:
+    description: OpenCode OIDC exchange API base URL (default https://api.opencode.ai)
+    required: false
+    default: "https://api.opencode.ai"
 
 outputs:
   mode:

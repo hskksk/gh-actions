@@ -1,54 +1,65 @@
-import { ALLOWED_MODEL, DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
+import { DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
 
-const OPENCODE_PROVIDERS = ["opencode", "opencode-go"] as const;
+/** Bare model id lookup: opencode-go wins over opencode when both define the same id. */
+const BARE_MODEL_PROVIDER_PRIORITY = ["opencode-go", "opencode"] as const;
 
 export type ModelCatalog = {
+  /** Resolve model from flags (`--model`, `model:`) — bare id, alias, or provider/model. */
   resolve(token: string): string | null;
+  /** Resolve positional token after /oc — bare model id (or alias) only. */
+  resolvePositional(token: string): string | null;
 };
 
 export function buildModelCatalog(
   providers: Record<string, { models?: Record<string, unknown> }>,
 ): ModelCatalog {
-  const byLookupKey = new Map<string, string>();
+  const modelIdsByProvider = new Map<string, Set<string>>();
+  const canonicalByProviderModel = new Map<string, string>();
 
-  for (const providerId of OPENCODE_PROVIDERS) {
+  for (const providerId of BARE_MODEL_PROVIDER_PRIORITY) {
     const models = providers[providerId]?.models;
     if (!models) continue;
-    for (const modelId of Object.keys(models)) {
-      const canonical = `${providerId}/${modelId}`;
-      byLookupKey.set(canonical.toLowerCase(), canonical);
-      const bareKey = modelId.toLowerCase();
-      if (!byLookupKey.has(bareKey)) {
-        byLookupKey.set(bareKey, canonical);
-      }
+    const ids = new Set(Object.keys(models));
+    modelIdsByProvider.set(providerId, ids);
+    for (const modelId of ids) {
+      canonicalByProviderModel.set(`${providerId}/${modelId}`.toLowerCase(), `${providerId}/${modelId}`);
     }
   }
 
-  for (const [alias, target] of Object.entries(MODEL_ALIASES)) {
-    byLookupKey.set(alias.toLowerCase(), target);
-  }
+  const resolveBareModelId = (modelId: string): string | null => {
+    for (const providerId of BARE_MODEL_PROVIDER_PRIORITY) {
+      const ids = modelIdsByProvider.get(providerId);
+      if (ids?.has(modelId)) {
+        return `${providerId}/${modelId}`;
+      }
+    }
+    return null;
+  };
 
   return {
     resolve(token: string): string | null {
       const trimmed = token.trim().replace(/^["']|["']$/g, "");
       if (!trimmed) return null;
 
-      const direct = byLookupKey.get(trimmed.toLowerCase());
-      if (direct) return direct;
+      const alias = MODEL_ALIASES[trimmed.toLowerCase()];
+      if (alias) return alias;
 
       if (trimmed.includes("/")) {
-        const [providerId, ...rest] = trimmed.split("/");
-        const modelId = rest.join("/");
-        if (!providerId || !modelId) return null;
-        if (!OPENCODE_PROVIDERS.includes(providerId as (typeof OPENCODE_PROVIDERS)[number])) {
-          return null;
-        }
-        const canonical = `${providerId}/${modelId}`;
-        if (!ALLOWED_MODEL.test(canonical)) return null;
-        return byLookupKey.get(canonical.toLowerCase()) ?? null;
+        const key = trimmed.toLowerCase();
+        return canonicalByProviderModel.get(key) ?? null;
       }
 
-      return null;
+      return resolveBareModelId(trimmed);
+    },
+
+    resolvePositional(token: string): string | null {
+      const trimmed = token.trim().replace(/^["']|["']$/g, "");
+      if (!trimmed || trimmed.includes("/")) return null;
+
+      const alias = MODEL_ALIASES[trimmed.toLowerCase()];
+      if (alias) return alias;
+
+      return resolveBareModelId(trimmed);
     },
   };
 }

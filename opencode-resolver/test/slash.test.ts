@@ -87,14 +87,25 @@ describe("parseModelFromBody", () => {
     expect(instruction).toBe("fix");
   });
 
-  it("parses positional catalog model after command", () => {
-    const { model, modelExplicit } = parseModelFromBody(
-      "/oc opencode/kimi-k2.5",
+  it("parses bare model id after command", () => {
+    const { model, modelExplicit, instruction } = parseModelFromBody(
+      "/oc kimi-k2.5 fix login",
       "issue_comment",
       testCatalog,
     );
     expect(model).toBe("opencode/kimi-k2.5");
     expect(modelExplicit).toBe(true);
+    expect(instruction).toContain("fix login");
+  });
+
+  it("does not parse provider/model as positional model", () => {
+    const { model, modelExplicit } = parseModelFromBody(
+      "/oc opencode/kimi-k2.5 fix",
+      "issue_comment",
+      testCatalog,
+    );
+    expect(model).toBe("opencode/big-pickle");
+    expect(modelExplicit).toBe(false);
   });
 
   it("does not treat normal words as models", () => {

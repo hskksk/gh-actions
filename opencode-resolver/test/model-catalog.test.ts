@@ -26,11 +26,21 @@ describe("buildModelCatalog", () => {
     expect(catalog.resolve("implement")).toBeNull();
   });
 
-  it("prefers the first provider for duplicate bare ids", () => {
+  it("prefers opencode-go over opencode for duplicate bare model ids", () => {
     const dup = buildModelCatalog({
       opencode: { models: { shared: {} } },
       "opencode-go": { models: { shared: {} } },
     });
-    expect(dup.resolve("shared")).toBe("opencode/shared");
+    expect(dup.resolvePositional("shared")).toBe("opencode-go/shared");
+  });
+
+  it("resolves bare kimi-k2.5 to opencode when only that provider lists it", () => {
+    const catalog = createTestModelCatalog(["opencode/kimi-k2.5"]);
+    expect(catalog.resolvePositional("kimi-k2.5")).toBe("opencode/kimi-k2.5");
+  });
+
+  it("does not treat provider/model as a positional model token", () => {
+    const catalog = createTestModelCatalog(["opencode/kimi-k2.5"]);
+    expect(catalog.resolvePositional("opencode/kimi-k2.5")).toBeNull();
   });
 });
