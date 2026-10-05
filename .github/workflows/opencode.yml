@@ -57,11 +57,10 @@ jobs:
       )
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # OIDC → OpenCode GitHub App installation token (anomalyco/opencode/github default).
+    # GitHub API read/write for issues/PRs uses that token, not github.token scopes.
     permissions:
       id-token: write
-      contents: read
-      pull-requests: write
-      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -109,7 +108,6 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
-          GITHUB_TOKEN: ${{ github.token }}
         with:
           agent: github-actions
           model: ${{ steps.slash.outputs.model }}

@@ -69,7 +69,7 @@ The reusable workflow **file name here** for OpenCode is `opencode.yml`. The con
 
 **`uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1`**
 
-Triggers are **not** included—you define `on:`. Job flow: checkout → `opencode-resolver` → pnpm or Bun (build mode) → `anomalyco/opencode/github@latest`.
+Triggers are **not** included—you define `on:`. Job flow: checkout → `opencode-resolver` → pnpm or Bun (build mode) → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`).
 
 **Inspect target:** existing `opencode.yml` (replace inline `github-script`), lockfile, pnpm vs Bun.
 
@@ -89,9 +89,6 @@ on:
 jobs:
   opencode:
     permissions:
-      contents: read
-      issues: write
-      pull-requests: write
       id-token: write
     uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
     secrets: inherit
@@ -100,7 +97,7 @@ jobs:
       trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
 ```
 
-The **caller job** must grant these permissions. Reusable workflows cannot elevate beyond what the caller allows (default `GITHUB_TOKEN` is often read-only).
+The **caller job** must grant `id-token: write` (same as the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
 
 | Secret | Purpose |
 |--------|---------|
@@ -111,7 +108,7 @@ The **caller job** must grant these permissions. Reusable workflows cannot eleva
 |----------|---------|
 | `OPENCODE_TRIGGER_ALLOWLIST` | Extra allowed trigger logins |
 
-**Human:** create OpenCode keys → repo secrets; optional allowlist variable; confirm org allows `anomalyco/opencode`.
+**Human:** install [OpenCode GitHub App](https://github.com/apps/opencode-agent) on the repo; create OpenCode API keys → repo secrets; optional allowlist variable; confirm org allows `anomalyco/opencode`.
 
 **Agent:** remove old inline resolver; add **`.mise.toml`** with the caller’s toolchain; use `toolchain: bun` + `stub-opencode-auth: true` when needed (e.g. prism-style).
 
