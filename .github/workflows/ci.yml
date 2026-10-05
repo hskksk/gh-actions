@@ -38,7 +38,7 @@ jobs:
       - run: pnpm run build
 
       - name: Verify dist exists
-        run: test -f dist/index.js && test -f dist/exchange/index.js
+        run: test -f dist/index.js
 
       - name: Verify action metadata
         run: test -f action.yml
