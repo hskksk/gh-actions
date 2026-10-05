@@ -88,12 +88,19 @@ on:
 
 jobs:
   opencode:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      id-token: write
     uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
     secrets: inherit
     with:
       toolchain: pnpm
       trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
 ```
+
+The **caller job** must grant these permissions. Reusable workflows cannot elevate beyond what the caller allows (default `GITHUB_TOKEN` is often read-only).
 
 | Secret | Purpose |
 |--------|---------|
