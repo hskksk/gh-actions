@@ -1,0 +1,20 @@
+{
+  "name": "gh-actions",
+  "version": "1.0.3",
+  "private": true,
+  "description": "Shared GitHub Actions for hskksk repositories",
+  "type": "module",
+  "packageManager": "bun@1.3.0",
+  "scripts": {
+    "release": "semantic-release",
+    "release:dry-run": "semantic-release --dry-run"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.1",
+    "@semantic-release/npm": "^13.0.0",
+    "semantic-release": "^25.0.1"
+  }
+}

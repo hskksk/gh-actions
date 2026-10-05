@@ -2,6 +2,30 @@
 
 Shared [GitHub Actions](https://github.com/features/actions) for [hskksk](https://github.com/hskksk) repositories. Pin **`@v1`** in consumer repos.
 
+## Tagging and releases
+
+This repo is **not** published to npm. Versioning exists so [semantic-release](https://semantic-release.gitbook.io/) can cut GitHub Releases from Conventional Commits on `main`.
+
+| Ref | Kind | Purpose |
+| --- | --- | --- |
+| `v1.0.3`, `v1.1.0`, … | Immutable **release tag** | Exact snapshot; created by semantic-release on each release. |
+| `v1`, `v2`, … | **Floating major tag** | Points at the latest release on that major line. Updated automatically after each release (`scripts/update-major-action-ref.sh`). Use this in consumer workflows: `uses: hskksk/gh-actions/setup-mise@v1`. |
+
+**Do not use a `v1` branch** for consumers—branches are easy to delete and break `@v1` resolution in GitHub Actions.
+
+**Release flow:** merge to `main` → **CI** succeeds → **Release** workflow runs semantic-release → GitHub Release + `vX.Y.Z` tag → floating `vX` tag is force-updated to the same commit.
+
+**Tag ancestry:** semantic-release only treats `vX.Y.Z` tags that are **reachable from `main`** as prior releases. If tags were created on an old history line, either move them onto `main` or cut a new `vX.Y.Z` on `main` before the Release workflow runs.
+
+**One-time recovery:** if `v1` is missing but `v1.0.x` tags exist, point it at the latest 1.x tag:
+
+```bash
+git fetch --tags
+latest="$(git tag -l 'v1.*' | sort -V | tail -1)"
+git tag -fa v1 -m "Track latest 1.x (${latest})" "${latest}^{}"
+git push origin refs/tags/v1 --force
+```
+
 **Coding agents:** If the user wants to adopt something from this repo into another project (e.g. *“add the opencode workflow from gh-actions”*), read **this file**—especially [Integrating into another repository](#integrating-into-another-repository)—then inspect the **target** repo and list work plus **human-only** tasks (secrets, npm approve, etc.).
 
 ---
@@ -220,4 +244,6 @@ mise install
 cd opencode-resolver && pnpm install && pnpm test && pnpm run build
 ```
 
-CI: **actionlint**, opencode-resolver test/build, composite smoke jobs.
+CI: **actionlint**, opencode-resolver test/build, composite smoke jobs, **semantic-release dry-run** on pull requests.
+
+**Releases:** see [Tagging and releases](#tagging-and-releases). After `main` CI passes, `.github/workflows/release.yml` runs semantic-release and refreshes the floating major tag.
