@@ -95,6 +95,8 @@ jobs:
   opencode:
     permissions:
       id-token: write
+      issues: write
+      pull-requests: write
     uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
     secrets: inherit
     with:
@@ -109,12 +111,12 @@ Use `toolchain: bun` when the consumer repo uses Bun. Pin Node/pnpm/Bun in the c
 | Mistake | Why it breaks |
 |--------|----------------|
 | No `permissions` on the `opencode` job | Reusable workflow cannot get `id-token: write`; workflow file validation fails |
-| `issues: write` / `pull-requests: write` on the caller job | Unnecessary for OIDC path; copy the template instead |
+| Missing `issues: write` / `pull-requests: write` on the caller job | Model acknowledgment comments from `opencode-resolver` cannot be posted |
 | Workflow-level `permissions: contents: read` only | Caps the job token; caller job still needs `id-token: write` on the **job** |
 | `GITHUB_TOKEN` + `use_github_token` without switching the reusable workflow | This template uses OIDC + App; do not mix modes |
 | Missing `.mise.toml` in the consumer repo | `setup-mise` has nothing to install for build mode |
 
-The **caller job** must grant **`id-token: write` only** (same as the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
+The **caller job** must grant **`id-token: write`**, **`issues: write`**, and **`pull-requests: write`** (same as the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
 
 | Secret | Purpose |
 |--------|---------|

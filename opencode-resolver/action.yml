@@ -17,6 +17,10 @@ inputs:
     description: Model when none is specified
     required: false
     default: opencode/big-pickle
+  post-model-ack:
+    description: Post a short acknowledgment comment when a catalog model is specified
+    required: false
+    default: "true"
 
 outputs:
   mode:
@@ -25,6 +29,10 @@ outputs:
     description: Resolved model id
   prompt:
     description: Trigger text for OpenCode (model tokens stripped from the command line when present)
+  instruction:
+    description: User instruction text after the slash command (for acknowledgment)
+  model-explicit:
+    description: true when the user specified a model from the OpenCode catalog
 
 runs:
   using: node24

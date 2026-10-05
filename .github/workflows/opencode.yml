@@ -65,6 +65,8 @@ jobs:
     # GitHub API read/write for issues/PRs uses that token, not github.token scopes.
     permissions:
       id-token: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

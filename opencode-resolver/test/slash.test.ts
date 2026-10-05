@@ -1,13 +1,22 @@
 import { describe, expect, it } from "vitest";
+import { createTestModelCatalog } from "../src/model-catalog.js";
 import {
   commentActorAuthorized,
   detectMode,
+  extractInstruction,
   hasCmdAtLineStart,
   hasCmdInText,
-  normalizeModelId,
   parseModelFromBody,
+  resolveModelToken,
   stripNonTriggerSections,
 } from "../src/slash.js";
+
+const testCatalog = createTestModelCatalog([
+  "opencode/big-pickle",
+  "opencode/kimi-k2.5",
+  "opencode-go/kimi-k3",
+  "opencode-go/glm-5.3-flash",
+]);
 
 describe("detectMode", () => {
   it("detects reply commands in comments", () => {
@@ -51,35 +60,71 @@ describe("stripNonTriggerSections", () => {
   });
 });
 
-describe("normalizeModelId", () => {
-  it("resolves aliases and bare go ids", () => {
-    expect(normalizeModelId("big-pickle")).toBe("opencode/big-pickle");
-    expect(normalizeModelId("glm-5.3-flash")).toBe("opencode-go/glm-5.3-flash");
-    expect(normalizeModelId("opencode/kimi-k2.5")).toBe("opencode/kimi-k2.5");
+describe("resolveModelToken", () => {
+  it("resolves catalog models and aliases", () => {
+    expect(resolveModelToken("big-pickle", testCatalog).model).toBe("opencode/big-pickle");
+    expect(resolveModelToken("glm-5.3-flash", testCatalog).model).toBe("opencode-go/glm-5.3-flash");
+    expect(resolveModelToken("opencode/kimi-k2.5", testCatalog).model).toBe("opencode/kimi-k2.5");
   });
 
-  it("falls back on invalid models", () => {
-    expect(normalizeModelId("not/a/good/model")).toBe("opencode/big-pickle");
+  it("falls back when token is not in catalog", () => {
+    const result = resolveModelToken("fix", testCatalog);
+    expect(result.model).toBe("opencode/big-pickle");
+    expect(result.explicit).toBe(false);
   });
 });
 
 describe("parseModelFromBody", () => {
-  it("parses --model flag", () => {
-    const { model, prompt } = parseModelFromBody("/oc --model kimi-k3", "issue_comment");
+  it("parses --model flag against catalog", () => {
+    const { model, prompt, modelExplicit, instruction } = parseModelFromBody(
+      "/oc --model kimi-k3 fix",
+      "issue_comment",
+      testCatalog,
+    );
     expect(model).toBe("opencode-go/kimi-k3");
-    expect(prompt).toContain("/oc");
+    expect(modelExplicit).toBe(true);
     expect(prompt).not.toContain("kimi-k3");
+    expect(instruction).toBe("fix");
   });
 
-  it("parses positional model after command", () => {
-    const { model } = parseModelFromBody("/oc opencode/kimi-k2.5", "issue_comment");
+  it("parses positional catalog model after command", () => {
+    const { model, modelExplicit } = parseModelFromBody(
+      "/oc opencode/kimi-k2.5",
+      "issue_comment",
+      testCatalog,
+    );
     expect(model).toBe("opencode/kimi-k2.5");
+    expect(modelExplicit).toBe(true);
   });
 
-  it("does not treat normal words as positional models", () => {
-    const { model, prompt } = parseModelFromBody("/oc fix the bug", "issue_comment");
+  it("does not treat normal words as models", () => {
+    const { model, prompt, modelExplicit } = parseModelFromBody(
+      "/oc fix the bug",
+      "issue_comment",
+      testCatalog,
+    );
     expect(model).toBe("opencode/big-pickle");
+    expect(modelExplicit).toBe(false);
     expect(prompt).toBe("/oc fix the bug");
+  });
+
+  it("keeps unknown tokens in the instruction", () => {
+    const { model, modelExplicit, instruction } = parseModelFromBody(
+      "/oc not-a-real-model do work",
+      "issue_comment",
+      testCatalog,
+    );
+    expect(model).toBe("opencode/big-pickle");
+    expect(modelExplicit).toBe(false);
+    expect(instruction).toContain("not-a-real-model");
+  });
+});
+
+describe("extractInstruction", () => {
+  it("collects text after the trigger line", () => {
+    const body = "Some intro\n/oc opencode/kimi-k2.5 implement X\nMore detail";
+    const instruction = extractInstruction(body, "issues", "/oc opencode/kimi-k2.5 implement X", "/oc implement X");
+    expect(instruction).toBe("implement X\nMore detail");
   });
 });
 
