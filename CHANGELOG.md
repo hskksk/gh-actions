@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/hskksk/gh-actions/compare/v1.0.1...v1.1.0) (2026-10-05)
+
+
+### Features
+
+* **opencode:** compose preset, caller, and /oc task prompts ([#9](https://github.com/hskksk/gh-actions/issues/9)) ([11c7054](https://github.com/hskksk/gh-actions/commit/11c70544bad84ea4d377bc421e6c0418da5ac137))
+
 ## [1.0.1](https://github.com/hskksk/gh-actions/compare/v1.0.0...v1.0.1) (2026-10-05)
 
 
