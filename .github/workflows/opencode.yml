@@ -121,13 +121,13 @@ jobs:
 
       - name: Parse OpenCode slash command
         id: slash
-        uses: ./opencode-resolver
+        uses: $/opencode-resolver
         with:
           trigger-allowlist: ${{ inputs.trigger-allowlist }}
 
       - name: Prepare toolchain (mise)
         if: steps.slash.outputs.mode == 'build'
-        uses: hskksk/gh-actions/setup-mise@v1
+        uses: $/setup-mise
 
       - name: Install dependencies (pnpm)
         if: steps.slash.outputs.mode == 'build' && inputs.toolchain == 'pnpm'
@@ -145,7 +145,7 @@ jobs:
 
       - name: Stage OpenCode progress helper
         if: steps.slash.outputs.mode == 'build'
-        uses: ./opencode-github-progress
+        uses: $/opencode-github-progress
 
       - name: Run opencode (github-reply)
         if: steps.slash.outputs.mode == 'reply'
