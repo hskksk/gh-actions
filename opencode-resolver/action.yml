@@ -39,5 +39,5 @@ outputs:
     description: true when the user specified a model from the OpenCode catalog
 
 runs:
-  using: node24
+  using: node20
   main: dist/index.js
