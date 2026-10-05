@@ -1,29 +1,12 @@
 name: Stage OpenCode GitHub progress script
-description: OIDC App token for gh + copy opencode-github-progress.sh into the consumer repo
+description: Copy opencode-github-progress.sh into the consumer repo (uses GH_TOKEN from OpenCode OIDC inside the agent run)
 branding:
   icon: comment-discussion
   color: blue
 
-inputs:
-  exchange-app-token:
-    description: Exchange OIDC for OpenCode GitHub App token and export GH_TOKEN
-    required: false
-    default: "true"
-  oidc-base-url:
-    description: OpenCode OIDC exchange API base URL
-    required: false
-    default: "https://api.opencode.ai"
-
 runs:
   using: composite
   steps:
-    - name: Exchange OIDC for GitHub App token
-      if: inputs.exchange-app-token == 'true'
-      shell: bash
-      env:
-        OPENCODE_OIDC_BASE_URL: ${{ inputs.oidc-base-url }}
-      run: node "${{ github.action_path }}/../opencode-resolver/dist/exchange/index.js"
-
     - name: Install progress helper into consumer checkout
       shell: bash
       run: |

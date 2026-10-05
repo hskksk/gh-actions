@@ -109,8 +109,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./opencode-github-progress
-        with:
-          exchange-app-token: "false"
 
       - name: Assert helper is executable
         run: test -x scripts/opencode-github-progress.sh

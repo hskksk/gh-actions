@@ -27,7 +27,7 @@ repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is not set}"
 body="**OpenCode (${phase})** $*"
 
 if [[ -z "${GH_TOKEN:-}" ]]; then
-  echo "GH_TOKEN is not set (expected OpenCode GitHub App token from OIDC exchange)" >&2
+  echo "GH_TOKEN is not set (expected OpenCode GitHub App token from the agent run OIDC exchange)" >&2
   exit 1
 fi
 
