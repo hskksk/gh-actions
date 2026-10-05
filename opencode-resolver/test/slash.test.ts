@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   commentActorAuthorized,
   detectMode,
+  extractTask,
   hasCmdAtLineStart,
   hasCmdInText,
   normalizeModelId,
@@ -74,6 +75,30 @@ describe("parseModelFromBody", () => {
   it("parses positional model after command", () => {
     const { model } = parseModelFromBody("/oc opencode/kimi-k2.5", "issue_comment");
     expect(model).toBe("opencode/kimi-k2.5");
+  });
+
+  it("does not treat normal words as positional models", () => {
+    const { model, task } = parseModelFromBody("/oc fix the bug", "issue_comment");
+    expect(model).toBe("opencode/big-pickle");
+    expect(task).toBe("fix the bug");
+  });
+
+  it("extracts task text after the slash command", () => {
+    const { task } = parseModelFromBody("/oc fix the bug", "issue_comment");
+    expect(task).toBe("fix the bug");
+  });
+
+  it("includes lines after the trigger line in the task", () => {
+    const body = "Some intro\n/oc implement X\n\nMore detail";
+    const { task } = parseModelFromBody(body, "issues");
+    expect(task).toBe("implement X\nMore detail");
+  });
+});
+
+describe("extractTask", () => {
+  it("strips model flags from the command line", () => {
+    const task = extractTask("/oc --model kimi-k3 do work", "issue_comment", "/oc --model kimi-k3 do work", "/oc do work");
+    expect(task).toBe("do work");
   });
 });
 

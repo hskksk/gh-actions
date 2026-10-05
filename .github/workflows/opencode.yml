@@ -30,6 +30,10 @@ on:
         description: Value for OPENCODE_TRIGGER_ALLOWLIST (comma-separated logins)
         type: string
         default: ""
+      prompt:
+        description: Optional extra instructions from the consumer workflow (appended before /oc task text)
+        type: string
+        default: ""
     secrets:
       OPENCODE_API_KEY:
         required: false
@@ -69,7 +73,7 @@ jobs:
 
       - name: Parse OpenCode slash command
         id: slash
-        uses: hskksk/gh-actions/opencode-resolver@v1
+        uses: ./opencode-resolver
         with:
           trigger-allowlist: ${{ inputs.trigger-allowlist }}
 
@@ -102,6 +106,41 @@ jobs:
           agent: github-reply
           prompt: ${{ steps.slash.outputs.prompt }}
 
+      - name: Compose OpenCode user prompt
+        if: steps.slash.outputs.mode == 'build'
+        id: oc_user_prompt
+        env:
+          CALLER_PROMPT: ${{ inputs.prompt }}
+          TASK: ${{ steps.slash.outputs.task }}
+        run: |
+          preset="$(cat <<'EOF'
+You run inside a **GitHub Actions** job (`CI=true`, non-interactive). Do not ask questions; permission prompts are denied.
+
+- Work in the checked-out repository. Use `/tmp` only for ephemeral scratch files.
+- Dependencies are installed by the workflow before OpenCode starts; prefer repo scripts over ad-hoc probes.
+- Git author identity is already configured. Reuse it for commits; do not invent noreply emails.
+- After you finish, OpenCode infrastructure handles **git push and PR creation** automatically. Do not warn about tokens or tell the user to open PRs manually.
+- If the user instruction is empty or only `/oc`, summarize the thread or review the linked issue/PR and act on what is asked in context.
+EOF
+)"
+          combined="$preset"
+          if [ -n "$CALLER_PROMPT" ]; then
+            combined="${combined}
+
+          ${CALLER_PROMPT}"
+          fi
+          if [ -n "$TASK" ]; then
+            combined="${combined}
+
+          ${TASK}"
+          fi
+          delimiter="$(openssl rand -hex 16)"
+          {
+            echo "prompt<<${delimiter}"
+            printf '%s\n' "$combined"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Run opencode
         if: steps.slash.outputs.mode == 'build'
         uses: anomalyco/opencode/github@latest
@@ -109,7 +148,6 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
         with:
-          agent: github-actions
           model: ${{ steps.slash.outputs.model }}
           share: true
-          prompt: ${{ (github.event_name == 'issues' || github.event_name == 'pull_request') && steps.slash.outputs.prompt || '' }}
+          prompt: ${{ steps.oc_user_prompt.outputs.prompt }}

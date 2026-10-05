@@ -30,3 +30,6 @@ jobs:
     with:
       toolchain: pnpm
       trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
+      # Optional repo-specific instructions (layer 2); gh-actions preset + /oc task are added automatically.
+      # prompt: |
+      #   Use pnpm typecheck after TypeScript edits.

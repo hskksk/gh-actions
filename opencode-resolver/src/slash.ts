@@ -168,15 +168,73 @@ export function looksLikeModelToken(token: string): boolean {
   return /^[a-z0-9][a-z0-9._-]*$/i.test(token);
 }
 
+/** Positional model after /oc — avoid treating normal words (e.g. "fix") as model ids. */
+export function isPositionalModelToken(token: string): boolean {
+  if (!looksLikeModelToken(token)) return false;
+  if (token.includes("/")) return true;
+  if (MODEL_ALIASES[token.toLowerCase()]) return true;
+  return /[0-9]/.test(token);
+}
+
+function stripCommandPrefix(line: string): string {
+  const trimmed = line.trim();
+  const cmds = [...ALL_CMDS].sort((a, b) => b.length - a.length);
+  for (const cmd of cmds) {
+    if (trimmed === cmd) return "";
+    if (trimmed.startsWith(`${cmd} `)) {
+      return trimmed.slice(cmd.length + 1).trim();
+    }
+    const idx = trimmed.toLowerCase().indexOf(cmd);
+    if (idx === -1) continue;
+    const beforeOk = idx === 0 || trimmed[idx - 1] === " " || trimmed[idx - 1] === "\n";
+    const end = idx + cmd.length;
+    const afterOk =
+      end === trimmed.length || trimmed[end] === " " || trimmed[end] === "\n" || trimmed[end] === "\r";
+    if (beforeOk && afterOk) {
+      return trimmed.slice(end).trim();
+    }
+  }
+  return trimmed;
+}
+
+export function extractTask(
+  body: string,
+  eventName: string,
+  cmdLine: string,
+  cleanedLine: string,
+): string {
+  const linePart = stripCommandPrefix(cleanedLine);
+  const lines = body.split(/\r?\n/);
+  const isComment =
+    eventName === "issue_comment" || eventName === "pull_request_review_comment";
+
+  let foundIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (isComment) {
+      if (line === cmdLine || line.trim() === cmdLine.trim()) {
+        foundIndex = i;
+        break;
+      }
+    } else if (line.trim() === cmdLine.trim() || line.trim() === cleanedLine.trim()) {
+      foundIndex = i;
+      break;
+    }
+  }
+
+  const tail = foundIndex >= 0 ? lines.slice(foundIndex + 1).join("\n").trim() : "";
+  return [linePart, tail].filter((part) => part.length > 0).join("\n").trim();
+}
+
 export function parseModelFromBody(
   body: string,
   eventName: string,
   defaultModel: string = DEFAULT_MODEL,
   onWarning?: (message: string) => void,
-): { model: string; prompt: string } {
+): { model: string; prompt: string; task: string } {
   const cmdLine = findTriggerLine(body, eventName);
   if (!cmdLine) {
-    return { model: defaultModel, prompt: body };
+    return { model: defaultModel, prompt: body, task: body.trim() };
   }
 
   let model = defaultModel;
@@ -194,7 +252,7 @@ export function parseModelFromBody(
       const escaped = cmd.replace(/\//g, "\\/");
       const re = new RegExp(`(${escaped})\\s+(\\S+)`, "i");
       const match = cmdLine.match(re);
-      if (match && looksLikeModelToken(match[2])) {
+      if (match && isPositionalModelToken(match[2])) {
         model = normalizeModelId(match[2], defaultModel, onWarning);
         cleanedLine = cmdLine.replace(re, "$1").replace(/\s{2,}/g, " ").trim();
         break;
@@ -202,10 +260,12 @@ export function parseModelFromBody(
     }
   }
 
+  const task = extractTask(body, eventName, cmdLine, cleanedLine);
+
   if (cleanedLine === cmdLine) {
-    return { model, prompt: body };
+    return { model, prompt: body, task };
   }
 
   const prompt = body.includes(cmdLine) ? body.replace(cmdLine, cleanedLine) : body;
-  return { model, prompt };
+  return { model, prompt, task };
 }

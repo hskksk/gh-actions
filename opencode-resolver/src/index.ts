@@ -86,10 +86,11 @@ async function run(): Promise<void> {
     return;
   }
 
-  const { model, prompt } = parseModelFromBody(body, eventName, defaultModel, onWarning);
+  const { model, prompt, task } = parseModelFromBody(body, eventName, defaultModel, onWarning);
   core.info(`OpenCode model: ${model}`);
   core.setOutput("mode", mode);
   core.setOutput("prompt", prompt);
+  core.setOutput("task", task);
   core.setOutput("model", model);
 }
 
