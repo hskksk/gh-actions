@@ -39,8 +39,8 @@ describe("buildModelCatalog", () => {
     expect(catalog.resolvePositional("kimi-k2.5")).toBe("opencode/kimi-k2.5");
   });
 
-  it("does not treat provider/model as a positional model token", () => {
+  it("resolves provider/model for positional tokens", () => {
     const catalog = createTestModelCatalog(["opencode/kimi-k2.5"]);
-    expect(catalog.resolvePositional("opencode/kimi-k2.5")).toBeNull();
+    expect(catalog.resolvePositional("opencode/kimi-k2.5")).toBe("opencode/kimi-k2.5");
   });
 });

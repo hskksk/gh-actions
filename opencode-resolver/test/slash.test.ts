@@ -98,14 +98,15 @@ describe("parseModelFromBody", () => {
     expect(instruction).toContain("fix login");
   });
 
-  it("does not parse provider/model as positional model", () => {
-    const { model, modelExplicit } = parseModelFromBody(
+  it("parses provider/model as positional model", () => {
+    const { model, modelExplicit, instruction } = parseModelFromBody(
       "/oc opencode/kimi-k2.5 fix",
       "issue_comment",
       testCatalog,
     );
-    expect(model).toBe("opencode/big-pickle");
-    expect(modelExplicit).toBe(false);
+    expect(model).toBe("opencode/kimi-k2.5");
+    expect(modelExplicit).toBe(true);
+    expect(instruction).toBe("fix");
   });
 
   it("does not treat normal words as models", () => {

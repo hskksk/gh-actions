@@ -4,9 +4,8 @@ import { DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
 const BARE_MODEL_PROVIDER_PRIORITY = ["opencode-go", "opencode"] as const;
 
 export type ModelCatalog = {
-  /** Resolve model from flags (`--model`, `model:`) — bare id, alias, or provider/model. */
+  /** Resolve model id: alias, bare id (opencode-go then opencode), or provider/model. */
   resolve(token: string): string | null;
-  /** Resolve positional token after /oc — bare model id (or alias) only. */
   resolvePositional(token: string): string | null;
 };
 
@@ -53,13 +52,7 @@ export function buildModelCatalog(
     },
 
     resolvePositional(token: string): string | null {
-      const trimmed = token.trim().replace(/^["']|["']$/g, "");
-      if (!trimmed || trimmed.includes("/")) return null;
-
-      const alias = MODEL_ALIASES[trimmed.toLowerCase()];
-      if (alias) return alias;
-
-      return resolveBareModelId(trimmed);
+      return this.resolve(token);
     },
   };
 }
