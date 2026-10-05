@@ -102,6 +102,17 @@ jobs:
           path: .
           skip: "true"
 
+  smoke-opencode-github-progress:
+    name: opencode-github-progress (stage script)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./opencode-github-progress
+
+      - name: Assert helper is executable
+        run: test -x scripts/opencode-github-progress.sh
+
   release-check:
     name: semantic-release dry-run
     if: github.event_name == 'pull_request'

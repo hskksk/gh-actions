@@ -1,0 +1,14 @@
+name: Stage OpenCode GitHub progress script
+description: Copy opencode-github-progress.sh into the consumer repo (uses GH_TOKEN from OpenCode OIDC inside the agent run)
+branding:
+  icon: comment-discussion
+  color: blue
+
+runs:
+  using: composite
+  steps:
+    - name: Install progress helper into consumer checkout
+      shell: bash
+      run: |
+        mkdir -p scripts
+        install -m 755 "${{ github.action_path }}/opencode-github-progress.sh" scripts/opencode-github-progress.sh

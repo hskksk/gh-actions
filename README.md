@@ -69,7 +69,7 @@ The reusable workflow **file name here** for OpenCode is `opencode.yml`. The con
 
 **`uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1`**
 
-Triggers are **not** included—you define `on:`. Job flow: checkout → `opencode-resolver` → pnpm or Bun (build mode) → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`).
+Triggers are **not** included—you define `on:`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → pnpm or Bun (build mode) → stage `scripts/opencode-github-progress.sh` → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Progress comments use `GH_TOKEN` from inside the OpenCode run.
 
 **Inspect target:** existing `opencode.yml` (replace inline `github-script`), lockfile, pnpm vs Bun.
 
@@ -109,12 +109,12 @@ Use `toolchain: bun` when the consumer repo uses Bun. Pin Node/pnpm/Bun in the c
 | Mistake | Why it breaks |
 |--------|----------------|
 | No `permissions` on the `opencode` job | Reusable workflow cannot get `id-token: write`; workflow file validation fails |
-| `issues: write` / `pull-requests: write` on the caller job | Unnecessary; acknowledgment comments use the OpenCode App token via OIDC |
+| Omitting `id-token: write` on the caller job | No OIDC → no App token for ack comments, progress posts, or `anomalyco/opencode/github` |
 | Workflow-level `permissions: contents: read` only | Caps the job token; caller job still needs `id-token: write` on the **job** |
 | `GITHUB_TOKEN` + `use_github_token` without switching the reusable workflow | This template uses OIDC + App; do not mix modes |
 | Missing `.mise.toml` in the consumer repo | `setup-mise` has nothing to install for build mode |
 
-The **caller job** must grant **`id-token: write` only** (same as the reusable workflow). Reusable workflows cannot elevate beyond what the caller allows.
+The **caller job** must grant **`id-token: write` only** (same as the reusable workflow). Model ack and OpenCode itself exchange OIDC for the App token (`GH_TOKEN`); progress comments use that same env inside the agent run—not the workflow `GITHUB_TOKEN`. Reusable workflows cannot elevate beyond what the caller allows.
 
 | Secret | Purpose |
 |--------|---------|

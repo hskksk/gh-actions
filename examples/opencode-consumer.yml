@@ -7,7 +7,7 @@
 # - Commit .mise.toml with node + pnpm or bun (setup-mise installs from it)
 # - Optional: repo variable OPENCODE_TRIGGER_ALLOWLIST (comma-separated logins)
 #
-# Caller job permissions must be exactly id-token: write (OIDC → App installation token).
+# Caller job permissions must be exactly id-token: write (OIDC → OpenCode App installation token).
 
 name: opencode
 
