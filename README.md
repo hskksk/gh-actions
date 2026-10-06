@@ -69,7 +69,7 @@ The reusable workflow **file name here** for OpenCode is `opencode.yml`. The con
 
 **`uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1`**
 
-In **this** repo, `opencode.yml` includes issue/PR `on:` triggers for dogfooding. **Consumer repos** add their own `on:` in a thin wrapper (below) and call this file via `workflow_call`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → pnpm or Bun (build mode) → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Phased progress on the trigger thread is **prompt-only** (preset in the reusable workflow)—no progress helper script. Direct runs use `vars.OPENCODE_TRIGGER_ALLOWLIST` when `trigger-allowlist` input is empty.
+In **this** repo, `opencode.yml` includes issue/PR `on:` triggers for dogfooding. **Consumer repos** add their own `on:` in a thin wrapper (below) and call this file via `workflow_call`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → pnpm or Bun (build mode) → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Direct runs use `vars.OPENCODE_TRIGGER_ALLOWLIST` when `trigger-allowlist` input is empty.
 
 **Inspect target:** existing `opencode.yml` (replace inline `github-script`), lockfile, pnpm vs Bun.
 
@@ -109,14 +109,12 @@ Use `toolchain: bun` when the consumer repo uses Bun. Pin Node/pnpm/Bun in the c
 | Mistake | Why it breaks |
 |--------|----------------|
 | No `permissions` on the `opencode` job | Reusable workflow cannot get `id-token: write`; workflow file validation fails |
-| Omitting `id-token: write` on the caller job | No OIDC → no App token for ack comments, progress posts, or `anomalyco/opencode/github` |
+| Omitting `id-token: write` on the caller job | No OIDC → no App token for ack comments or `anomalyco/opencode/github` |
 | Workflow-level `permissions: contents: read` only | Caps the job token; caller job still needs `id-token: write` on the **job** |
 | `GITHUB_TOKEN` + `use_github_token` without switching the reusable workflow | This template uses OIDC + App; do not mix modes |
 | Missing `.mise.toml` in the consumer repo | `setup-mise` has nothing to install for build mode |
 
 The **caller job** must grant **`id-token: write` only** (same as the reusable workflow). Model ack and OpenCode exchange OIDC for the OpenCode GitHub App installation token inside `opencode github run`—not the workflow `GITHUB_TOKEN`. Reusable workflows cannot elevate beyond what the caller allows.
-
-Optional: [`opencode-github-progress`](opencode-github-progress/) composite action (installs a `gh`-based helper under `/tmp`) if you want shell-posted phase comments; the default reusable workflow does not use it.
 
 | Secret | Purpose |
 |--------|---------|

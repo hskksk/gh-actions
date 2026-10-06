@@ -3,8 +3,7 @@
 # Other repos: thin wrapper with `workflow_call` — see examples/opencode-consumer.yml.
 # Toolchain versions come from the caller's `.mise.toml` (setup-mise).
 #
-# /oc build: preset PROMPT asks OpenCode to report phased progress on the trigger thread
-# (開始・調査・下書きPR・実装・検証・提出). Draft PR early so another run can continue.
+# /oc build: draft PR early so another run can continue on the same branch/PR.
 name: OpenCode
 
 on:
@@ -67,36 +66,15 @@ env:
 
     ## PR and handoff (when the task changes the repo)
 
-    Another `/oc` run may continue on the same branch/PR. Prefer incremental, visible progress.
+    Another `/oc` run may continue on the same branch/PR. Prefer incremental, visible work.
 
-    1. **Branch early** — After scope is clear (`調査`), branch off `origin/main` or continue the trigger PR branch.
+    1. **Branch early** — After scope is clear, branch off `origin/main` or continue the trigger PR branch.
     2. **Draft PR without waiting for full verification** — Commit, push, and open or update a **draft PR** as soon as there is meaningful WIP.
     3. **Keep pushing** — After substantial edits, commit and push again; note WIP gaps in the PR body.
     4. **Verify after, if time remains** — Run relevant checks after the draft exists; leave notes on the PR if checks are slow.
-    5. **When time is low** — Push current commits, post `提出` on the trigger thread with the PR link, and say what a follow-up should do.
+    5. **When time is low** — Push current commits, link the PR in the PR body, and note what a follow-up should do.
 
     Use `gh pr create --draft` unless the user asked for ready-for-review.
-
-    ## Progress on the triggering thread
-
-    Report brief status on the **same issue or PR** that started this run. Use **OpenCode's GitHub Action integration** (App token inside `opencode github run`)—not `gh`, not `GH_TOKEN` shell tricks, and not helper scripts.
-
-    When a phase completes, leave a short issue/PR comment in this form (1–3 lines):
-
-    `**OpenCode (<phase>)** <one or two short sentences>`
-
-    Comment **once after each** phase (skip only if it truly did not apply):
-
-    | Phase | When |
-    | --- | --- |
-    | `開始` | Right after you understand the request (before heavy edits) |
-    | `調査` | Scope and approach are clear |
-    | `下書きPR` | First draft PR is opened or updated with WIP |
-    | `実装` | Main edits for this pass are done (push again if you changed files after `下書きPR`) |
-    | `検証` | Relevant checks ran when time allowed (optional if draft exists and time ran out) |
-    | `提出` | Final push; PR link; or explain why you are stopping without a PR |
-
-    Link the PR in `提出` only. If you cannot post a separate comment mid-run, mirror the same phase labels in the draft PR description until you can comment on the thread.
 
 jobs:
   opencode:
