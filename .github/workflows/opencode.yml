@@ -1,5 +1,6 @@
 # Reusable OpenCode job (slash commands, toolchain, anomalyco/opencode/github).
-# Caller keeps `on:` triggers; pass vars via inputs (e.g. trigger-allowlist from vars).
+# Also dogfoods in this repo via issue/PR triggers below (same events as examples/opencode-consumer.yml).
+# Other repos: thin wrapper with `workflow_call` — see examples/opencode-consumer.yml.
 # Toolchain versions come from the caller's `.mise.toml` (setup-mise).
 #
 # /oc build: OpenCode posts phase comments via scripts/opencode-github-progress.sh
@@ -7,6 +8,14 @@
 name: OpenCode
 
 on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
   workflow_call:
     inputs:
       toolchain:
@@ -123,7 +132,7 @@ jobs:
         id: slash
         uses: $/opencode-resolver
         with:
-          trigger-allowlist: ${{ inputs.trigger-allowlist }}
+          trigger-allowlist: ${{ inputs.trigger-allowlist || vars.OPENCODE_TRIGGER_ALLOWLIST }}
 
       - name: Prepare toolchain (mise)
         if: steps.slash.outputs.mode == 'build'
