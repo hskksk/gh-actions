@@ -69,13 +69,13 @@ The reusable workflow **file name here** for OpenCode is `opencode.yml`. The con
 
 **`uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1`**
 
-Triggers are **not** included—you define `on:`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → pnpm or Bun (build mode) → stage `scripts/opencode-github-progress.sh` → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Progress comments use `GH_TOKEN` from inside the OpenCode run.
+In **this** repo, `opencode.yml` includes issue/PR `on:` triggers for dogfooding. **Consumer repos** add their own `on:` in a thin wrapper (below) and call this file via `workflow_call`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → pnpm or Bun (build mode) → stage `scripts/opencode-github-progress.sh` → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Progress comments use `GH_TOKEN` from inside the OpenCode run. Direct runs use `vars.OPENCODE_TRIGGER_ALLOWLIST` when `trigger-allowlist` input is empty.
 
 **Inspect target:** existing `opencode.yml` (replace inline `github-script`), lockfile, pnpm vs Bun.
 
 #### Consumer template (copy into your repo)
 
-Canonical file: **[`examples/opencode-consumer.yml`](examples/opencode-consumer.yml)** — copy to `.github/workflows/opencode.yml` and open a PR. Do not edit the reusable workflow in `gh-actions`; only add this thin wrapper in the consumer repo.
+Canonical file: **[`examples/opencode-consumer.yml`](examples/opencode-consumer.yml)** — copy to `.github/workflows/opencode.yml` in **your** repo and open a PR. Do not copy `gh-actions`’s built-in triggers into consumers; only add this thin wrapper that calls `workflow_call`.
 
 ```yaml
 # Same as examples/opencode-consumer.yml — keep in sync when adopting
