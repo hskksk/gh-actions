@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/hskksk/gh-actions/compare/v1.3.0...v1.4.0) (2026-10-06)
+
+
+### Features
+
+* **opencode:** install progress helper outside checkout ([#15](https://github.com/hskksk/gh-actions/issues/15)) ([986273b](https://github.com/hskksk/gh-actions/commit/986273bccb941f41059d67aebb232aa1cf3d3cd2)), closes [#14](https://github.com/hskksk/gh-actions/issues/14)
+
 # [1.3.0](https://github.com/hskksk/gh-actions/compare/v1.2.0...v1.3.0) (2026-10-06)
 
 
