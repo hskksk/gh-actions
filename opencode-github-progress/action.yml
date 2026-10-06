@@ -14,11 +14,8 @@ runs:
         dest="/tmp/opencode-github-progress.sh"
         install -m 755 "${{ github.action_path }}/opencode-github-progress.sh" "$dest"
 
-        config_dir="${RUNNER_TEMP}/opencode-progress-config"
-        mkdir -p "$config_dir"
-        install -m 644 "${{ github.action_path }}/opencode.json" "$config_dir/opencode.json"
-
+        # Bundled opencode.json lives in this action directory (not the consumer checkout).
         {
           echo "OPENCODE_GITHUB_PROGRESS_SCRIPT=$dest"
-          echo "OPENCODE_CONFIG_DIR=$config_dir"
+          echo "OPENCODE_CONFIG_DIR=${{ github.action_path }}"
         } >>"$GITHUB_ENV"
