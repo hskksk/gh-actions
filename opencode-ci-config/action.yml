@@ -1,0 +1,16 @@
+name: Configure OpenCode for GitHub Actions
+description: Point OPENCODE_CONFIG at bundled opencode.json (e.g. allow /tmp) without adding .opencode to the consumer checkout
+branding:
+  icon: shield
+  color: blue
+
+runs:
+  using: composite
+  steps:
+    - name: Set OPENCODE_CONFIG for later steps
+      shell: bash
+      run: |
+        set -euo pipefail
+        config="${{ github.action_path }}/opencode.json"
+        test -f "$config"
+        echo "OPENCODE_CONFIG=$config" >>"$GITHUB_ENV"

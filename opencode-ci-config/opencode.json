@@ -8,9 +8,6 @@
       "/tmp/**": "allow"
     },
     "question": "deny",
-    "doom_loop": "deny",
-    "bash": {
-      "/tmp/opencode-github-progress.sh *": "allow"
-    }
+    "doom_loop": "deny"
   }
 }

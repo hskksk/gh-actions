@@ -102,21 +102,17 @@ jobs:
           path: .
           skip: "true"
 
-  smoke-opencode-github-progress:
-    name: opencode-github-progress (stage script)
+  smoke-opencode-ci-config:
+    name: opencode-ci-config (OPENCODE_CONFIG)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: $/opencode-ci-config
 
-      - uses: $/opencode-github-progress
-
-      - name: Assert helper is executable outside checkout
+      - name: Assert bundled config is wired
         run: |
-          test -x /tmp/opencode-github-progress.sh
-          test -n "${OPENCODE_GITHUB_PROGRESS_SCRIPT:-}"
-          test -f "${OPENCODE_CONFIG_DIR}/opencode.json"
-          jq -e '.permission.bash["/tmp/opencode-github-progress.sh *"] == "allow"' \
-            "${OPENCODE_CONFIG_DIR}/opencode.json"
+          test -n "${OPENCODE_CONFIG:-}"
+          test -f "$OPENCODE_CONFIG"
+          jq -e '.permission.external_directory["/tmp"] == "allow"' "$OPENCODE_CONFIG"
 
   release-check:
     name: semantic-release dry-run
