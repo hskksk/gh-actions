@@ -1,5 +1,5 @@
 name: Stage OpenCode GitHub progress script
-description: Install opencode-github-progress.sh outside the repo checkout (uses GH_TOKEN from OpenCode OIDC inside the agent run)
+description: Optional — install opencode-github-progress.sh outside the checkout for gh-based phase comments (not used by the default opencode reusable workflow; prefer prompt-only progress in opencode.yml)
 branding:
   icon: message-square
   color: blue
