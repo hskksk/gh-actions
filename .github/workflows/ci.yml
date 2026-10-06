@@ -102,6 +102,18 @@ jobs:
           path: .
           skip: "true"
 
+  smoke-opencode-ci-config:
+    name: opencode-ci-config (OPENCODE_CONFIG)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: $/opencode-ci-config
+
+      - name: Assert bundled config is wired
+        run: |
+          test -n "${OPENCODE_CONFIG:-}"
+          test -f "$OPENCODE_CONFIG"
+          jq -e '.permission.external_directory["/tmp"] == "allow"' "$OPENCODE_CONFIG"
+
   release-check:
     name: semantic-release dry-run
     if: github.event_name == 'pull_request'

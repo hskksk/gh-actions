@@ -130,12 +130,18 @@ jobs:
           mkdir -p ~/.local/share/opencode
           echo '{}' > ~/.local/share/opencode/auth.json
 
+      # Bundled opencode.json via OPENCODE_CONFIG (not consumer .opencode/) — see opencode-ci-config action.
+      - name: Configure OpenCode for Actions
+        if: steps.slash.outputs.mode == 'reply' || steps.slash.outputs.mode == 'build'
+        uses: $/opencode-ci-config
+
       - name: Run opencode (github-reply)
         if: steps.slash.outputs.mode == 'reply'
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+          OPENCODE_CONFIG: ${{ env.OPENCODE_CONFIG }}
         with:
           model: ${{ steps.slash.outputs.model }}
           agent: github-reply
@@ -147,6 +153,7 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_GO_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+          OPENCODE_CONFIG: ${{ env.OPENCODE_CONFIG }}
         with:
           # → MODEL env inside action (opencode github run)
           model: ${{ steps.slash.outputs.model }}
