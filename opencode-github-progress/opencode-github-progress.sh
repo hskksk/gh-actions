@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Post a short progress comment on the GitHub issue/PR that triggered opencode.
 # Phases: 開始, 調査, 下書きPR, 実装, 検証, 提出
-# Usage: scripts/opencode-github-progress.sh <phase> <message...>
+# Usage: /tmp/opencode-github-progress.sh <phase> <message...>
+# (Staged by opencode-github-progress action; path also in OPENCODE_GITHUB_PROGRESS_SCRIPT.)
 set -euo pipefail
 
 if [[ "${1:-}" == "" ]]; then

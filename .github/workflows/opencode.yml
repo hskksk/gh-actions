@@ -3,7 +3,7 @@
 # Other repos: thin wrapper with `workflow_call` — see examples/opencode-consumer.yml.
 # Toolchain versions come from the caller's `.mise.toml` (setup-mise).
 #
-# /oc build: OpenCode posts phase comments via scripts/opencode-github-progress.sh
+# /oc build: OpenCode posts phase comments via /tmp/opencode-github-progress.sh (outside checkout)
 # (開始・調査・下書きPR・実装・検証・提出). Draft PR early so another run can continue.
 name: OpenCode
 
@@ -79,10 +79,10 @@ env:
 
     ## Progress on the triggering thread
 
-    Post brief status on the **same issue or PR** that started this run. The workflow staged `scripts/opencode-github-progress.sh`; use `GH_TOKEN` from this OpenCode run (GitHub App via OIDC):
+    Post brief status on the **same issue or PR** that started this run. The workflow installed `$OPENCODE_GITHUB_PROGRESS_SCRIPT` (default `/tmp/opencode-github-progress.sh`, outside the repo so it is not committed); use `GH_TOKEN` from this OpenCode run (GitHub App via OIDC):
 
     ```bash
-    scripts/opencode-github-progress.sh <phase> <one or two short sentences>
+    "$OPENCODE_GITHUB_PROGRESS_SCRIPT" <phase> <one or two short sentences>
     ```
 
     Comment **once after each** phase completes (skip only if it truly did not apply):
