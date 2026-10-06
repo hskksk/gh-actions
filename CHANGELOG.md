@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/hskksk/gh-actions/compare/v1.4.0...v1.5.0) (2026-10-06)
+
+
+### Features
+
+* **ci:** add semantic PR and commitlint checks ([#20](https://github.com/hskksk/gh-actions/issues/20)) ([4174580](https://github.com/hskksk/gh-actions/commit/4174580902a4c6055bd6c3d50cb03fb0c67baf50))
+
 # [1.4.0](https://github.com/hskksk/gh-actions/compare/v1.3.0...v1.4.0) (2026-10-06)
 
 
