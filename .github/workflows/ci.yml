@@ -110,8 +110,12 @@ jobs:
 
       - uses: $/opencode-github-progress
 
-      - name: Assert helper is executable
-        run: test -x scripts/opencode-github-progress.sh
+      - name: Assert helper is executable outside checkout
+        run: |
+          test -x /tmp/opencode-github-progress.sh
+          test -n "${OPENCODE_GITHUB_PROGRESS_SCRIPT:-}"
+          test -n "${OPENCODE_CONFIG_DIR:-}"
+          test -f "${OPENCODE_CONFIG_DIR}/opencode.json"
 
   release-check:
     name: semantic-release dry-run

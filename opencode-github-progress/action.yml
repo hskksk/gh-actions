@@ -1,5 +1,5 @@
 name: Stage OpenCode GitHub progress script
-description: Copy opencode-github-progress.sh into the consumer repo (uses GH_TOKEN from OpenCode OIDC inside the agent run)
+description: Install opencode-github-progress.sh outside the repo checkout (uses GH_TOKEN from OpenCode OIDC inside the agent run)
 branding:
   icon: message-square
   color: blue
@@ -7,8 +7,27 @@ branding:
 runs:
   using: composite
   steps:
-    - name: Install progress helper into consumer checkout
+    - name: Install progress helper outside checkout
       shell: bash
       run: |
-        mkdir -p scripts
-        install -m 755 "${{ github.action_path }}/opencode-github-progress.sh" scripts/opencode-github-progress.sh
+        set -euo pipefail
+        dest="/tmp/opencode-github-progress.sh"
+        install -m 755 "${{ github.action_path }}/opencode-github-progress.sh" "$dest"
+
+        config_dir="${RUNNER_TEMP}/opencode-progress-config"
+        mkdir -p "$config_dir"
+        printf '%s\n' \
+          '{' \
+          '  "$schema": "https://opencode.ai/config.json",' \
+          '  "permission": {' \
+          '    "bash": {' \
+          '      "/tmp/opencode-github-progress.sh *": "allow"' \
+          '    }' \
+          '  }' \
+          '}' \
+          >"$config_dir/opencode.json"
+
+        {
+          echo "OPENCODE_GITHUB_PROGRESS_SCRIPT=$dest"
+          echo "OPENCODE_CONFIG_DIR=$config_dir"
+        } >>"$GITHUB_ENV"
