@@ -15,21 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - name: Lint workflows
-        run: actionlint -color .github/workflows/*.yml
+        run: actionlint -color .github/workflows/*.yml workflows/*.yml
 
   opencode-resolver:
     name: opencode-resolver (test & build)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: opencode-resolver
+        working-directory: actions/opencode-resolver
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - run: pnpm install --frozen-lockfile
 
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - name: Assert pinned mise version
         run: mise --version | grep -F "2026.10.2"
@@ -63,7 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-pnpm
+      - uses: $/actions/setup-pnpm
         with:
           pnpm-version: "9.14.0"
           node-version: "24"
@@ -80,7 +80,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Expect failure when secrets unset
-        uses: $/setup-supabase-cli
+        uses: $/actions/setup-supabase-cli
         continue-on-error: true
         id: supabase
 
@@ -97,7 +97,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/publish-github-pages-artifact
+      - uses: $/actions/publish-github-pages-artifact
         with:
           path: .
           skip: "true"
@@ -108,7 +108,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/opencode-github-progress
+      - uses: $/actions/opencode-github-progress
 
       - name: Assert helper is executable
         run: test -x scripts/opencode-github-progress.sh
@@ -122,7 +122,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - name: Install release tooling
         run: bun install --frozen-lockfile

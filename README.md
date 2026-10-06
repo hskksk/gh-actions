@@ -9,7 +9,7 @@ This repo is **not** published to npm. Versioning exists so [semantic-release](h
 | Ref | Kind | Purpose |
 | --- | --- | --- |
 | `v1.0.3`, `v1.1.0`, … | Immutable **release tag** | Exact snapshot; created by semantic-release on each release. |
-| `v1`, `v2`, … | **Floating major tag** | Points at the latest release on that major line. Updated automatically after each release (`scripts/update-major-action-ref.sh`). Use this in consumer workflows: `uses: hskksk/gh-actions/setup-mise@v1`. |
+| `v1`, `v2`, … | **Floating major tag** | Points at the latest release on that major line. Updated automatically after each release (`scripts/update-major-action-ref.sh`). Use this in consumer workflows: `uses: hskksk/gh-actions/actions/setup-mise@v1`. |
 
 **Do not use a `v1` branch** for consumers—branches are easy to delete and break `@v1` resolution in GitHub Actions.
 
@@ -28,6 +28,14 @@ git push origin refs/tags/v1 --force
 
 **Coding agents:** If the user wants to adopt something from this repo into another project (e.g. *“add the opencode workflow from gh-actions”*), read **this file**—especially [Integrating into another repository](#integrating-into-another-repository)—then inspect the **target** repo and list work plus **human-only** tasks (secrets, npm approve, etc.).
 
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| [`actions/`](actions/) | Shared **composite / Node actions** consumed as `uses: hskksk/gh-actions/actions/<name>@v1`. |
+| [`workflows/`](workflows/) | **Reusable workflows** (`workflow_call`) maintained here as the canonical source. |
+| [`.github/workflows/`](.github/workflows/) | **This repo only:** `ci.yml`, `release.yml`, plus **symlinks** into `workflows/` so GitHub can resolve reusable workflows (GitHub still requires the `uses:` path to be under `.github/workflows/`; see [Reuse workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows)). |
+
 ---
 
 ## Integrating into another repository
@@ -36,25 +44,25 @@ Use this section when wiring `hskksk/gh-actions` into a **different** repo. Do n
 
 ### How to read the request
 
-1. **Identify the artifact** — reusable workflow (under `.github/workflows/` here) vs action (top-level folder).
+1. **Identify the artifact** — reusable workflow (under [`workflows/`](workflows/), referenced via `.github/workflows/` path) vs action (under [`actions/`](actions/)).
 2. **Pin a ref** — `@v1` for production; `@main` or a SHA only for experiments.
 3. **Inspect the target repo** — `package.json`, `.github/workflows/`, `.releaserc.json`, `supabase/`, Pages settings.
 4. **Plan the diff** — add, replace, or delete workflows; pin Node/pnpm/Bun (and related CLIs) in **`.mise.toml`**.
 5. **Separate human tasks** — API keys, npm trusted publishing, stage approve (2FA), Supabase dashboard, GitHub Pages environment, org Actions policy.
 
-Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/opencode-resolver@v1`), not npm install.
+Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/actions/opencode-resolver@v1`), not npm install.
 
 ### Catalog
 
 | User intent | Use | Type |
 |-------------|-----|------|
-| OpenCode on `/oc` | `.github/workflows/opencode.yml` + [`examples/opencode-consumer.yml`](examples/opencode-consumer.yml) | Reusable workflow |
-| npm semantic-release + `npm stage publish` | `.github/workflows/npm-release-staged.yml` | Reusable workflow |
-| Parse `/oc` only (custom workflow) | `opencode-resolver` | Node action |
-| pnpm + Node | `setup-pnpm` | Composite |
-| mise (pinned action + release) | `setup-mise` | Composite |
-| Supabase CLI in CI | `setup-supabase-cli` | Composite |
-| Upload Pages artifact after build | `publish-github-pages-artifact` | Composite |
+| OpenCode on `/oc` | [`workflows/opencode.yml`](workflows/opencode.yml) + [`examples/opencode-consumer.yml`](examples/opencode-consumer.yml) | Reusable workflow |
+| npm semantic-release + `npm stage publish` | [`workflows/npm-release-staged.yml`](workflows/npm-release-staged.yml) | Reusable workflow |
+| Parse `/oc` only (custom workflow) | `actions/opencode-resolver` | Node action |
+| pnpm + Node | `actions/setup-pnpm` | Composite |
+| mise (pinned action + release) | `actions/setup-mise` | Composite |
+| Supabase CLI in CI | `actions/setup-supabase-cli` | Composite |
+| Upload Pages artifact after build | `actions/publish-github-pages-artifact` | Composite |
 
 The reusable workflow **file name here** for OpenCode is `opencode.yml`. The consumer may name their wrapper workflow anything.
 
@@ -155,7 +163,7 @@ jobs:
 
 ### `opencode-resolver` (action only)
 
-**`uses: hskksk/gh-actions/opencode-resolver@v1`** — outputs `mode`, `model`, `prompt`. Same OpenCode secrets if followed by `anomalyco/opencode/github`.
+**`uses: hskksk/gh-actions/actions/opencode-resolver@v1`** — outputs `mode`, `model`, `prompt`. Same OpenCode secrets if followed by `anomalyco/opencode/github`.
 
 ### `setup-pnpm`
 
@@ -168,11 +176,11 @@ Default for CI in hskksk repos. Installs tools from the checked-out **`.mise.tom
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: hskksk/gh-actions/setup-mise@v1
+  - uses: hskksk/gh-actions/actions/setup-mise@v1
   - run: pnpm install --frozen-lockfile
 ```
 
-Reusable workflows **`opencode.yml`** and **`npm-release-staged.yml`** call `setup-mise` on the caller repository (after checkout).
+Reusable workflows **`opencode.yml`** and **`npm-release-staged.yml`** call `actions/setup-mise` on the caller repository (after checkout).
 
 Inputs: `version` (mise release, default `2026.10.2`), `install`, `cache`.
 
@@ -192,8 +200,8 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-      - uses: hskksk/gh-actions/setup-mise@v1
-      - uses: hskksk/gh-actions/setup-supabase-cli@v1
+      - uses: hskksk/gh-actions/actions/setup-mise@v1
+      - uses: hskksk/gh-actions/actions/setup-supabase-cli@v1
         with:
           install: "false"
 ```
@@ -225,7 +233,7 @@ Caller builds, then uploads; separate job runs `actions/deploy-pages@v4`. Use `s
 ### `opencode-resolver`
 
 ```yaml
-- uses: hskksk/gh-actions/opencode-resolver@v1
+- uses: hskksk/gh-actions/actions/opencode-resolver@v1
   id: slash
   with:
     trigger-allowlist: ${{ vars.OPENCODE_TRIGGER_ALLOWLIST }}
@@ -253,16 +261,18 @@ Inputs: `path`, `skip` (default `false`).
 
 | File | Role |
 |------|------|
-| [`opencode.yml`](.github/workflows/opencode.yml) | Full OpenCode job |
-| [`npm-release-staged.yml`](.github/workflows/npm-release-staged.yml) | semantic-release + npm stage |
+| [`opencode.yml`](workflows/opencode.yml) | Full OpenCode job |
+| [`npm-release-staged.yml`](workflows/npm-release-staged.yml) | semantic-release + npm stage |
+
+Consumer `uses:` paths (GitHub requirement): `hskksk/gh-actions/.github/workflows/<file>@v1`.
 
 ## Development (this repo)
 
-Root **`.mise.toml`** pins Node, pnpm, npm, Bun, and actionlint. CI uses `./setup-mise`.
+Root **`.mise.toml`** pins Node, pnpm, npm, Bun, and actionlint. CI uses `actions/setup-mise`.
 
 ```bash
 mise install
-cd opencode-resolver && pnpm install && pnpm test && pnpm run build
+cd actions/opencode-resolver && pnpm install && pnpm test && pnpm run build
 ```
 
 CI: **actionlint**, opencode-resolver test/build, composite smoke jobs, **semantic-release dry-run** on pull requests.
