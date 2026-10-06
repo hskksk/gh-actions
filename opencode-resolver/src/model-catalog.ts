@@ -1,4 +1,5 @@
 import { DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
+import { pickLatestMatchingModelId } from "./model-pattern.js";
 
 /** Bare model id lookup: opencode-go wins over opencode when both define the same id. */
 const BARE_MODEL_PROVIDER_PRIORITY = ["opencode-go", "opencode"] as const;
@@ -7,6 +8,8 @@ export type ModelCatalog = {
   /** Resolve model id: alias, bare id (opencode-go then opencode), or provider/model. */
   resolve(token: string): string | null;
   resolvePositional(token: string): string | null;
+  /** Latest model id under `providerId` whose id matches `modelIdGlob` (single `*`). */
+  resolveLatestByGlob(providerId: string, modelIdGlob: string): string | null;
 };
 
 export function buildModelCatalog(
@@ -53,6 +56,14 @@ export function buildModelCatalog(
 
     resolvePositional(token: string): string | null {
       return this.resolve(token);
+    },
+
+    resolveLatestByGlob(providerId: string, modelIdGlob: string): string | null {
+      const ids = modelIdsByProvider.get(providerId);
+      if (!ids || ids.size === 0) return null;
+      const latestId = pickLatestMatchingModelId([...ids], modelIdGlob);
+      if (!latestId) return null;
+      return `${providerId}/${latestId}`;
     },
   };
 }

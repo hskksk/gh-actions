@@ -36,6 +36,11 @@ describe("detectMode", () => {
   it("returns empty when no command", () => {
     expect(detectMode("hello", "issue_comment")).toBe("");
   });
+
+  it("detects /oc-deep and /oc-gpt as build mode", () => {
+    expect(detectMode("/oc-deep fix", "issue_comment")).toBe("build");
+    expect(detectMode("/oc-gpt summarize", "issue_comment")).toBe("build");
+  });
 });
 
 describe("hasCmdInText", () => {
@@ -129,6 +134,34 @@ describe("parseModelFromBody", () => {
     expect(model).toBe("opencode/big-pickle");
     expect(modelExplicit).toBe(false);
     expect(instruction).toContain("not-a-real-model");
+  });
+
+  it("resolves /oc-deep to latest deepseek-v*-flash from catalog", () => {
+    const catalog = createTestModelCatalog([
+      "opencode/big-pickle",
+      "opencode-go/deepseek-v4-flash",
+      "opencode-go/deepseek-v4.1-flash",
+    ]);
+    const { model, modelExplicit, instruction } = parseModelFromBody(
+      "/oc-deep implement feature",
+      "issue_comment",
+      catalog,
+    );
+    expect(model).toBe("opencode-go/deepseek-v4.1-flash");
+    expect(modelExplicit).toBe(true);
+    expect(instruction).toBe("implement feature");
+  });
+
+  it("resolves /oc-gpt to latest gpt-*-luna when catalog is updated", () => {
+    const older = createTestModelCatalog(["opencode-go/gpt-5.6-luna"]);
+    expect(
+      parseModelFromBody("/oc-gpt review", "issue_comment", older).model,
+    ).toBe("opencode-go/gpt-5.6-luna");
+
+    const newer = createTestModelCatalog(["opencode-go/gpt-5.6-luna", "opencode-go/gpt-6-luna"]);
+    expect(parseModelFromBody("/oc-gpt review", "issue_comment", newer).model).toBe(
+      "opencode-go/gpt-6-luna",
+    );
   });
 });
 

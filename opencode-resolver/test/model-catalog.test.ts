@@ -43,4 +43,23 @@ describe("buildModelCatalog", () => {
     const catalog = createTestModelCatalog(["opencode/kimi-k2.5"]);
     expect(catalog.resolvePositional("opencode/kimi-k2.5")).toBe("opencode/kimi-k2.5");
   });
+
+  it("resolveLatestByGlob picks newest deepseek-v*-flash on opencode-go", () => {
+    const catalog = createTestModelCatalog([
+      "opencode-go/deepseek-v4-flash",
+      "opencode-go/deepseek-v4.1-flash",
+      "opencode-go/deepseek-v4-pro",
+    ]);
+    expect(catalog.resolveLatestByGlob("opencode-go", "deepseek-v*-flash")).toBe(
+      "opencode-go/deepseek-v4.1-flash",
+    );
+  });
+
+  it("resolveLatestByGlob picks newest gpt-*-luna when catalog changes", () => {
+    const v1 = createTestModelCatalog(["opencode-go/gpt-5.6-luna"]);
+    expect(v1.resolveLatestByGlob("opencode-go", "gpt-*-luna")).toBe("opencode-go/gpt-5.6-luna");
+
+    const v2 = createTestModelCatalog(["opencode-go/gpt-5.6-luna", "opencode-go/gpt-6-luna"]);
+    expect(v2.resolveLatestByGlob("opencode-go", "gpt-*-luna")).toBe("opencode-go/gpt-6-luna");
+  });
 });
