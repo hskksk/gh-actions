@@ -15,6 +15,8 @@ This repo is **not** published to npm. Versioning exists so [semantic-release](h
 
 **Release flow:** merge to `main` → **CI** succeeds → **Release** workflow runs semantic-release → GitHub Release + `vX.Y.Z` tag → floating `vX` tag is force-updated to the same commit.
 
+**Merging to `main`:** use **merge commit** or **rebase and merge**, not squash. semantic-release reads each commit on `main`; squash titles hide `feat`/`fix` commits that lived only in the PR body. [Lint PR](.github/workflows/lint-pr.yml) enforces [Conventional Commits](https://www.conventionalcommits.org/) on the **PR title** ([`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request)) and on **every commit** in the PR ([`commitlint`](https://commitlint.js.org/) via [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action)). Use types such as `feat`, `fix`, `perf` when you want a release; `refactor` and `chore` do not bump the version by default.
+
 **Tag ancestry:** semantic-release only treats `vX.Y.Z` tags that are **reachable from `main`** as prior releases. If tags were created on an old history line, either move them onto `main` or cut a new `vX.Y.Z` on `main` before the Release workflow runs.
 
 **One-time recovery:** if `v1` is missing but `v1.0.x` tags exist, point it at the latest 1.x tag:
