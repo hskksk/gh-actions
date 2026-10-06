@@ -1,5 +1,5 @@
 import type { ModelCatalog } from "./model-catalog.js";
-import { ALLOWED_MODEL, DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
+import { ALLOWED_MODEL, BUILD_CMD_MODEL_GLOBS, DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
 
 export { ALLOWED_MODEL, DEFAULT_MODEL, MODEL_ALIASES } from "./constants.js";
 
@@ -11,6 +11,8 @@ export const ALL_CMDS = [
   "/oci",
   "/oca",
   "/opencode",
+  "/oc-deep",
+  "/oc-gpt",
   "/oc",
 ];
 
@@ -23,7 +25,7 @@ export const REPLY_CMDS = [
   "/oca",
 ];
 
-export const BUILD_CMDS = ["/opencode", "/oc"];
+export const BUILD_CMDS = ["/opencode", "/oc-deep", "/oc-gpt", "/oc"];
 
 export const TRUSTED_COMMENT_ASSOC = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 export const TRUSTED_REPO_PERMS = new Set(["admin", "maintain", "write"]);
@@ -141,8 +143,40 @@ export function normalizeModelId(
   const aliasOnly: ModelCatalog = {
     resolve: (token) => MODEL_ALIASES[token.toLowerCase()] ?? null,
     resolvePositional: (token) => MODEL_ALIASES[token.toLowerCase()] ?? null,
+    resolveLatestByGlob: () => null,
   };
   return resolveModelToken(raw, aliasOnly, defaultModel, onWarning).model;
+}
+
+export function findMatchedCommand(cmdLine: string, eventName: string): string | null {
+  const isComment =
+    eventName === "issue_comment" || eventName === "pull_request_review_comment";
+  const cmds = [...ALL_CMDS].sort((a, b) => b.length - a.length);
+  for (const cmd of cmds) {
+    if (isComment) {
+      if (hasCmdInText(cmdLine, cmd)) return cmd;
+    } else {
+      const trimmed = cmdLine.trim();
+      if (trimmed === cmd || trimmed.startsWith(`${cmd} `)) return cmd;
+    }
+  }
+  return null;
+}
+
+export function resolveBuildCommandDefaultModel(
+  matchedCmd: string | null,
+  catalog: ModelCatalog,
+  fallback: string,
+  onWarning?: (message: string) => void,
+): { model: string; explicit: boolean } {
+  const spec = matchedCmd ? BUILD_CMD_MODEL_GLOBS[matchedCmd] : undefined;
+  if (!spec) return { model: fallback, explicit: false };
+  const resolved = catalog.resolveLatestByGlob(spec.provider, spec.glob);
+  if (resolved) return { model: resolved, explicit: true };
+  onWarning?.(
+    `No catalog model matches ${spec.provider}/${spec.glob}; using ${fallback}.`,
+  );
+  return { model: fallback, explicit: false };
 }
 
 export function findTriggerLine(body: string, eventName: string): string {
@@ -226,13 +260,16 @@ export function parseModelFromBody(
     return { model: defaultModel, prompt: body, instruction: body.trim(), modelExplicit: false };
   }
 
-  let model = defaultModel;
-  let modelExplicit = false;
+  const matchedCmd = findMatchedCommand(cmdLine, eventName);
+  const cmdDefault = resolveBuildCommandDefaultModel(matchedCmd, catalog, defaultModel, onWarning);
+
+  let model = cmdDefault.model;
+  let modelExplicit = cmdDefault.explicit;
   let cleanedLine = cmdLine;
 
   const flagMatch = cmdLine.match(/(?:^|\s)(?:--model|-m|model:)\s+(\S+)/i);
   if (flagMatch) {
-    const resolved = resolveModelToken(flagMatch[1], catalog, defaultModel, onWarning);
+    const resolved = resolveModelToken(flagMatch[1], catalog, cmdDefault.model, onWarning);
     model = resolved.model;
     modelExplicit = resolved.explicit;
     cleanedLine = cmdLine
@@ -245,7 +282,7 @@ export function parseModelFromBody(
       const re = new RegExp(`(${escaped})\\s+(\\S+)`, "i");
       const match = cmdLine.match(re);
       if (!match) continue;
-      const resolved = resolveModelToken(match[2], catalog, defaultModel, onWarning, true);
+      const resolved = resolveModelToken(match[2], catalog, cmdDefault.model, onWarning, true);
       if (!resolved.explicit) break;
       model = resolved.model;
       modelExplicit = true;
