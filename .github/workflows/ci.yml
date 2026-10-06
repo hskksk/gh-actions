@@ -18,7 +18,7 @@ jobs:
       - uses: $/actions/setup-mise
 
       - name: Lint workflows
-        run: actionlint -color .github/workflows/*.yml workflows/*.yml
+        run: actionlint -color .github/workflows/*.yml
 
   opencode-resolver:
     name: opencode-resolver (test & build)

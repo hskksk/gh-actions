@@ -33,8 +33,7 @@ git push origin refs/tags/v1 --force
 | Path | Purpose |
 | --- | --- |
 | [`actions/`](actions/) | Shared **composite / Node actions** consumed as `uses: hskksk/gh-actions/actions/<name>@v1`. |
-| [`workflows/`](workflows/) | **Reusable workflows** (`workflow_call`) maintained here as the canonical source. |
-| [`.github/workflows/`](.github/workflows/) | **This repo only:** `ci.yml`, `release.yml`, plus **symlinks** into `workflows/` so GitHub can resolve reusable workflows (GitHub still requires the `uses:` path to be under `.github/workflows/`; see [Reuse workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows)). |
+| [`.github/workflows/`](.github/workflows/) | **`ci.yml` / `release.yml`** (this repo) and **reusable** `workflow_call` workflows (`opencode.yml`, `npm-release-staged.yml`). |
 
 ---
 
@@ -44,7 +43,7 @@ Use this section when wiring `hskksk/gh-actions` into a **different** repo. Do n
 
 ### How to read the request
 
-1. **Identify the artifact** — reusable workflow (under [`workflows/`](workflows/), referenced via `.github/workflows/` path) vs action (under [`actions/`](actions/)).
+1. **Identify the artifact** — reusable workflow (under `.github/workflows/` here) vs action (under [`actions/`](actions/)).
 2. **Pin a ref** — `@v1` for production; `@main` or a SHA only for experiments.
 3. **Inspect the target repo** — `package.json`, `.github/workflows/`, `.releaserc.json`, `supabase/`, Pages settings.
 4. **Plan the diff** — add, replace, or delete workflows; pin Node/pnpm/Bun (and related CLIs) in **`.mise.toml`**.
@@ -56,8 +55,8 @@ Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/acti
 
 | User intent | Use | Type |
 |-------------|-----|------|
-| OpenCode on `/oc` | [`workflows/opencode.yml`](workflows/opencode.yml) + [`examples/opencode-consumer.yml`](examples/opencode-consumer.yml) | Reusable workflow |
-| npm semantic-release + `npm stage publish` | [`workflows/npm-release-staged.yml`](workflows/npm-release-staged.yml) | Reusable workflow |
+| OpenCode on `/oc` | `.github/workflows/opencode.yml` + [`examples/opencode-consumer.yml`](examples/opencode-consumer.yml) | Reusable workflow |
+| npm semantic-release + `npm stage publish` | `.github/workflows/npm-release-staged.yml` | Reusable workflow |
 | Parse `/oc` only (custom workflow) | `actions/opencode-resolver` | Node action |
 | pnpm + Node | `actions/setup-pnpm` | Composite |
 | mise (pinned action + release) | `actions/setup-mise` | Composite |
@@ -261,10 +260,8 @@ Inputs: `path`, `skip` (default `false`).
 
 | File | Role |
 |------|------|
-| [`opencode.yml`](workflows/opencode.yml) | Full OpenCode job |
-| [`npm-release-staged.yml`](workflows/npm-release-staged.yml) | semantic-release + npm stage |
-
-Consumer `uses:` paths (GitHub requirement): `hskksk/gh-actions/.github/workflows/<file>@v1`.
+| [`opencode.yml`](.github/workflows/opencode.yml) | Full OpenCode job |
+| [`npm-release-staged.yml`](.github/workflows/npm-release-staged.yml) | semantic-release + npm stage |
 
 ## Development (this repo)
 
