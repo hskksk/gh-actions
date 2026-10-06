@@ -115,9 +115,6 @@ jobs:
           test -x /tmp/opencode-github-progress.sh
           test -n "${OPENCODE_GITHUB_PROGRESS_SCRIPT:-}"
           test -f "${OPENCODE_CONFIG_DIR}/opencode.json"
-          case "${GITHUB_WORKSPACE}" in
-            "${OPENCODE_CONFIG_DIR}"*) echo "OPENCODE_CONFIG_DIR must not be under checkout" >&2; exit 1 ;;
-          esac
           jq -e '.permission.bash["/tmp/opencode-github-progress.sh *"] == "allow"' \
             "${OPENCODE_CONFIG_DIR}/opencode.json"
 

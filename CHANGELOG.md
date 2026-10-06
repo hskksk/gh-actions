@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/hskksk/gh-actions/compare/v1.2.0...v1.3.0) (2026-10-06)
+
+
+### Features
+
+* **opencode:** add issue/PR triggers for in-repo dogfooding ([#16](https://github.com/hskksk/gh-actions/issues/16)) ([1695f44](https://github.com/hskksk/gh-actions/commit/1695f44c0dcde0ef21dc250d90449a4b551bf990)), closes [#actions](https://github.com/hskksk/gh-actions/issues/actions)
+
 # [1.2.0](https://github.com/hskksk/gh-actions/compare/v1.1.0...v1.2.0) (2026-10-05)
 
 
