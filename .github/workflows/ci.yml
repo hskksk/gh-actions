@@ -116,6 +116,8 @@ jobs:
           test -n "${OPENCODE_GITHUB_PROGRESS_SCRIPT:-}"
           test -n "${OPENCODE_CONFIG_DIR:-}"
           test -f "${OPENCODE_CONFIG_DIR}/opencode.json"
+          jq -e '.permission.bash["/tmp/opencode-github-progress.sh *"] == "allow"' \
+            "${OPENCODE_CONFIG_DIR}/opencode.json"
 
   release-check:
     name: semantic-release dry-run
