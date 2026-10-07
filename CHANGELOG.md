@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/hskksk/gh-actions/compare/v1.7.0...v1.8.0) (2026-10-07)
+
+
+### Features
+
+* **ci:** support bun in npm-release-staged workflow ([54f3b3f](https://github.com/hskksk/gh-actions/commit/54f3b3fddb974dcad71623be1f6f01c7178ea517))
+
 # [1.7.0](https://github.com/hskksk/gh-actions/compare/v1.6.1...v1.7.0) (2026-10-07)
 
 
