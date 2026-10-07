@@ -59,6 +59,7 @@ env:
     - Work in the checked-out repository. Use `/tmp` only for ephemeral scratch files.
     - Dependencies are installed by the workflow before OpenCode starts; prefer repo scripts over ad-hoc probes.
     - Git author identity is already configured. Reuse it for commits; do not invent noreply emails.
+    - **Conventional Commits required** — Commit messages **and** PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/) (`type(scope): subject`, e.g. `fix(opencode): ...`). CI checks such as commitlint and semantic PR title lint reject non-conforming commits and titles.
     - After you finish, OpenCode infrastructure handles **git push and PR creation** automatically. Do not warn about tokens or tell the user to open PRs manually.
     - If the user instruction is empty or only `/oc`, summarize the thread or review the linked issue/PR and act on what is asked in context.
     - The job **times out after 30 minutes**. Avoid finishing with no branch and no PR when the task needs repo changes.
