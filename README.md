@@ -15,7 +15,7 @@ This repo is **not** published to npm. Versioning exists so [semantic-release](h
 
 **Release flow:** merge to `main` → **CI** succeeds → **Release** workflow runs semantic-release → GitHub Release + `vX.Y.Z` tag → floating `vX` tag is force-updated to the same commit.
 
-**Merging to `main`:** use **merge commit** or **rebase and merge**, not squash. semantic-release reads each commit on `main`; squash titles hide `feat`/`fix` commits that lived only in the PR body. [CI](.github/workflows/ci.yml) (jobs `semantic-pull-request` and `commitlint`) enforces [Conventional Commits](https://www.conventionalcommits.org/) on the **PR title** ([`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request)) and on **every commit** in the PR ([`commitlint`](https://commitlint.js.org/) via [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action)). Use types such as `feat`, `fix`, `perf` when you want a release; with the catch-all rule in [`.releaserc.json`](.releaserc.json), **every** merged commit (including `refactor`, `chore`, `docs`, …) triggers at least a **patch** release, `feat` bumps **minor**, and a breaking change (`!` such as `feat!: …`, or a `BREAKING CHANGE:` footer) bumps **major**.
+**Merging to `main`:** use **merge commit** or **rebase and merge**, not squash. semantic-release reads each commit on `main`; squash titles hide `feat`/`fix` commits that lived only in the PR body. The [`lint-pr`](.github/workflows/lint-pr.yml) workflow enforces [Conventional Commits](https://www.conventionalcommits.org/) on the **PR title** ([`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request)) and on **every commit** in the PR ([`commitlint`](https://commitlint.js.org/) via [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action)). Use types such as `feat`, `fix`, `perf` when you want a release; with the catch-all rule in [`.releaserc.json`](.releaserc.json), **every** merged commit (including `refactor`, `chore`, `docs`, …) triggers at least a **patch** release, `feat` bumps **minor**, and a breaking change (`!` such as `feat!: …`, or a `BREAKING CHANGE:` footer) bumps **major**.
 
 **Tag ancestry:** semantic-release only treats `vX.Y.Z` tags that are **reachable from `main`** as prior releases. If tags were created on an old history line, either move them onto `main` or cut a new `vX.Y.Z` on `main` before the Release workflow runs.
 
@@ -35,7 +35,7 @@ git push origin refs/tags/v1 --force
 | Path | Purpose |
 | --- | --- |
 | [`actions/`](actions/) | Shared **composite / Node actions** consumed as `uses: hskksk/gh-actions/actions/<name>@v1`. |
-| [`.github/workflows/`](.github/workflows/) | **`ci.yml` / `release.yml`** (this repo) and **reusable** `workflow_call` workflows (`opencode.yml`, `npm-release-staged.yml`). |
+| [`.github/workflows/`](.github/workflows/) | **`ci.yml` / `release.yml`** (this repo) and **reusable** `workflow_call` workflows (`lint-pr.yml`, `opencode.yml`, `npm-release-staged.yml`). |
 
 ---
 
@@ -58,6 +58,7 @@ Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/acti
 | User intent | Use | Type |
 |-------------|-----|------|
 | OpenCode on `/oc` | `.github/workflows/opencode.yml` + [`examples/opencode-consumer.yml`](examples/opencode-consumer.yml) | Reusable workflow |
+| Conventional Commits lint (PR title + commits) | `.github/workflows/lint-pr.yml` + [`examples/lint-pr-consumer.yml`](examples/lint-pr-consumer.yml) | Reusable workflow |
 | npm semantic-release + `npm stage publish` | `.github/workflows/npm-release-staged.yml` | Reusable workflow |
 | Parse `/oc` only (custom workflow) | `actions/opencode-resolver` | Node action |
 | OpenCode CI permissions (`/tmp`, non-interactive) | `actions/opencode-ci-config` | Composite |
@@ -182,6 +183,32 @@ jobs:
 
 **Agent:** keep `.releaserc.json` unless asked; add **`.mise.toml`** (include `npm` ≥ 11.15.0 for stage publish when using this workflow); override `run-typecheck` / `run-test` / `run-build` if scripts differ.
 
+### `lint-pr` reusable workflow
+
+**`uses: hskksk/gh-actions/.github/workflows/lint-pr.yml@v1`**
+
+Runs [`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request) on the **PR title** and [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action) on **every commit** in the PR. In **this** repo, `lint-pr.yml` includes its own `pull_request` trigger for dogfooding; **consumer repos** add a thin wrapper and call it via `workflow_call`.
+
+```yaml
+name: lint-pr
+
+on:
+  pull_request:
+
+jobs:
+  lint-pr:
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: hskksk/gh-actions/.github/workflows/lint-pr.yml@v1
+```
+
+Canonical file: **[`examples/lint-pr-consumer.yml`](examples/lint-pr-consumer.yml)**.
+
+The caller job must grant at least **`contents: read`** + **`pull-requests: read`**; no secrets are needed (`GITHUB_TOKEN` is automatic). commitlint reads the **consumer** repo’s commitlint config, so add `commitlint.config.*` there if you want rules beyond the default `@commitlint/config-conventional` (this repo’s [`.mjs`](commitlint.config.mjs) also forces lower-case subjects).
+
+**Human:** make both jobs required status checks if you gate merges on them. **Agent:** add the wrapper workflow; keep commit/PR-message conventions in the consumer README.
+
 ### `opencode-resolver` (action only)
 
 **`uses: hskksk/gh-actions/actions/opencode-resolver@v1`** — outputs `mode`, `model`, `prompt`. Same OpenCode secrets if followed by `anomalyco/opencode/github`.
@@ -282,6 +309,7 @@ Inputs: `path`, `skip` (default `false`).
 
 | File | Role |
 |------|------|
+| [`lint-pr.yml`](.github/workflows/lint-pr.yml) | Conventional Commits on PR title + every commit |
 | [`opencode.yml`](.github/workflows/opencode.yml) | Full OpenCode job |
 | [`npm-release-staged.yml`](.github/workflows/npm-release-staged.yml) | semantic-release + npm stage |
 
@@ -294,6 +322,6 @@ mise install
 cd actions/opencode-resolver && pnpm install && pnpm test && pnpm run build
 ```
 
-CI: **actionlint**, opencode-resolver test/build, composite smoke jobs, **semantic-release dry-run** on pull requests.
+CI: **actionlint**, opencode-resolver test/build, composite smoke jobs, **semantic-release dry-run** on pull requests. PR title/commit lint lives in the separate [`lint-pr`](.github/workflows/lint-pr.yml) workflow.
 
 **Releases:** see [Tagging and releases](#tagging-and-releases). After `main` CI passes, `.github/workflows/release.yml` runs semantic-release and refreshes the floating major tag.

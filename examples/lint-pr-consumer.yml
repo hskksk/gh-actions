@@ -1,0 +1,19 @@
+# Consumer wrapper for the hskksk/gh-actions reusable PR lint workflow
+# (Conventional Commits on the PR title and on every commit in the PR).
+# Copy this file to YOUR_REPO/.github/workflows/lint-pr.yml (filename may differ).
+#
+# The caller job grants contents: read + pull-requests: read; no secrets needed
+# (the reusable workflow uses the automatic GITHUB_TOKEN).
+# Add commitlint.config.* to the consumer repo to extend @commitlint/config-conventional.
+
+name: lint-pr
+
+on:
+  pull_request:
+
+jobs:
+  lint-pr:
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: hskksk/gh-actions/.github/workflows/lint-pr.yml@v1
