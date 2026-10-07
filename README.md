@@ -59,7 +59,7 @@ Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/acti
 |-------------|-----|------|
 | OpenCode on `/oc` | `.github/workflows/opencode.yml` + [`examples/opencode-consumer.yml`](examples/opencode-consumer.yml) | Reusable workflow |
 | Conventional Commits lint (PR title + commits) | `.github/workflows/lint-pr.yml` + [`examples/lint-pr-consumer.yml`](examples/lint-pr-consumer.yml) | Reusable workflow |
-| npm semantic-release + `npm stage publish` | `.github/workflows/npm-release-staged.yml` | Reusable workflow |
+| npm semantic-release + `npm stage publish` (pnpm or Bun) | `.github/workflows/npm-release-staged.yml` + [`examples/npm-release-staged-consumer.yml`](examples/npm-release-staged-consumer.yml) | Reusable workflow |
 | Parse `/oc` only (custom workflow) | `actions/opencode-resolver` | Node action |
 | OpenCode CI permissions (`/tmp`, non-interactive) | `actions/opencode-ci-config` | Composite |
 | pnpm + Node | `actions/setup-pnpm` | Composite |
@@ -163,7 +163,9 @@ Edit permissions in [`actions/opencode-ci-config/opencode.json`](actions/opencod
 
 **`uses: hskksk/gh-actions/.github/workflows/npm-release-staged.yml@v1`**
 
-typecheck → test → build → `semantic-release`. **`.releaserc.json` stays in the consumer repo.**
+typecheck → test → build → `semantic-release`, on **pnpm or Bun**. **`.releaserc.json` stays in the consumer repo.**
+
+Canonical file: **[`examples/npm-release-staged-consumer.yml`](examples/npm-release-staged-consumer.yml)** — copy to `.github/workflows/<name>.yml` in **your** repo; the caller defines `on:` (typically `push` to `main`) and `concurrency`.
 
 ```yaml
 jobs:
@@ -179,7 +181,14 @@ jobs:
       run-build: ""
 ```
 
-**Human:** npm [Trusted Publishing](https://docs.npmjs.com/trusted-publishers); approve staged releases (2FA); Conventional Commits on `main`.
+| Input | Default | Notes |
+| --- | --- | --- |
+| `toolchain` | `pnpm` | `pnpm` or `bun`. Selects the install step (`pnpm install` / `bun install`), the `$PM` expansion, and the release command (`pnpm exec semantic-release` / `bunx semantic-release`). |
+| `run-typecheck` / `run-test` / `run-build` | `$PM run typecheck` / `$PM run test` / `$PM run build` | `$PM` expands to the selected toolchain. Leave `run-typecheck` or `run-build` empty to skip. |
+
+**Bun consumers:** set `toolchain: bun` and pin **`bun` and `node`** in `.mise.toml` — the npm CLI (≥ 11.15.0) is still required for `npm stage publish`. Override `run-test` only when the repo has no `test` script.
+
+**Human:** npm [Trusted Publishing](https://docs.npmjs.com/trusted-publishers); approve staged releases (2FA); Conventional Commits on `main`; merge with a merge commit or rebase (a squash hides `feat`/`fix` from semantic-release).
 
 **Agent:** keep `.releaserc.json` unless asked; add **`.mise.toml`** (include `npm` ≥ 11.15.0 for stage publish when using this workflow); override `run-typecheck` / `run-test` / `run-build` if scripts differ.
 

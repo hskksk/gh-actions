@@ -1,11 +1,17 @@
 # Reusable semantic-release job with npm stage publish (OIDC).
 # Caller defines `on:` and keeps `.releaserc.json` in the package repo.
 # Toolchain versions come from the caller's `.mise.toml` (setup-mise).
+# `toolchain` selects pnpm or Bun for install, run-* defaults and the release command.
+# Bun callers still need Node (npm >= 11.15.0) in `.mise.toml` for `npm stage publish`.
 name: npm release (staged)
 
 on:
   workflow_call:
     inputs:
+      toolchain:
+        description: pnpm or bun for install, run-* defaults, and the release command
+        type: string
+        default: pnpm
       pnpm-version:
         description: Deprecated; pin pnpm in the caller `.mise.toml` instead
         type: string
@@ -16,22 +22,27 @@ on:
         type: string
         required: false
         default: ""
+      bun-version:
+        description: Deprecated; pin bun in the caller `.mise.toml` instead
+        type: string
+        required: false
+        default: ""
       cache-dependency-path:
         description: Unused (mise-action cache); kept for workflow_call compatibility
         type: string
         default: pnpm-lock.yaml
       run-typecheck:
-        description: Command to run; leave empty to skip
+        description: Command to run; leave empty to skip. `$PM` expands to pnpm or bun.
         type: string
-        default: pnpm run typecheck
+        default: $PM run typecheck
       run-test:
-        description: Test command
+        description: Command to run; `$PM` expands to pnpm or bun.
         type: string
-        default: pnpm test
+        default: $PM run test
       run-build:
-        description: Build command
+        description: Command to run; `$PM` expands to pnpm or bun.
         type: string
-        default: pnpm run build
+        default: $PM run build
 
 jobs:
   release:
@@ -42,6 +53,9 @@ jobs:
       issues: write
       pull-requests: write
       id-token: write
+    env:
+      # Consumed by the default run-* commands above.
+      PM: ${{ inputs.toolchain }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,16 +63,28 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Validate toolchain
+        run: |
+          case "$PM" in
+            pnpm|bun) ;;
+            *) echo "Unsupported toolchain: '${PM}' (expected pnpm or bun)" >&2; exit 1 ;;
+          esac
+
       # Do not set registry-url on setup-node — semantic-release + OIDC conflict.
       # https://semantic-release.org/recipes/ci-configurations/github-actions/
       - name: Setup toolchain (mise)
-        uses: hskksk/gh-actions/actions/setup-mise@v1
+        uses: $/actions/setup-mise
 
       - name: Upgrade npm CLI for stage publish
         run: npm install -g npm@^11.15.0
 
-      - name: Install dependencies
+      - name: Install dependencies (pnpm)
+        if: inputs.toolchain == 'pnpm'
         run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies (bun)
+        if: inputs.toolchain == 'bun'
+        run: bun install --frozen-lockfile
 
       - name: Typecheck
         if: inputs.run-typecheck != ''
@@ -70,7 +96,14 @@ jobs:
       - name: Build
         run: ${{ inputs.run-build }}
 
-      - name: Release
+      - name: Release (pnpm)
+        if: inputs.toolchain == 'pnpm'
         run: pnpm exec semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release (bun)
+        if: inputs.toolchain == 'bun'
+        run: bunx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

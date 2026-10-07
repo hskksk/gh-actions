@@ -1,0 +1,41 @@
+# Consumer wrapper for the hskksk/gh-actions reusable npm release workflow
+# (semantic-release + `npm stage publish` over OIDC trusted publishing).
+# Copy this file to YOUR_REPO/.github/workflows/<name>.yml (filename may differ).
+#
+# Before enabling:
+# - Commit `.releaserc.json` (semantic-release config: `npmPublish: false` plus an
+#   `@semantic-release/exec` `publishCmd` of `npm stage publish`).
+# - Commit `.mise.toml` with node (for the npm CLI, >= 11.15.0) plus pnpm or bun.
+#   The reusable workflow installs with `<toolchain> install --frozen-lockfile`.
+# - Configure npm Trusted Publishing for this repository.
+# - Use Conventional Commits on `main`; merge with merge commit or rebase, not squash.
+#
+# Caller job permissions must grant contents/issues/pull-requests write + id-token: write.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: hskksk/gh-actions/.github/workflows/npm-release-staged.yml@v1
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    with:
+      # pnpm (default). run-* defaults to `$PM run typecheck` / `$PM run test` / `$PM run build`.
+      run-build: ""
+      # Bun alternative — add `bun` (and node/npm) to `.mise.toml`:
+      # toolchain: bun
+      # run-typecheck: bun run typecheck
+      # run-test: bun test
+      # run-build: bun run build
