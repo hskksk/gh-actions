@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - name: Lint workflows
         run: actionlint -color .github/workflows/*.yml
@@ -26,11 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: opencode-resolver
+        working-directory: actions/opencode-resolver
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - run: pnpm install --frozen-lockfile
 
@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - name: Assert pinned mise version
         run: mise --version | grep -F "2026.10.2"
@@ -64,7 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/setup-pnpm
+      - uses: $/actions/setup-pnpm
         with:
           pnpm-version: "9.14.0"
           node-version: "24"
@@ -81,7 +81,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Expect failure when secrets unset
-        uses: $/setup-supabase-cli
+        uses: $/actions/setup-supabase-cli
         continue-on-error: true
         id: supabase
 
@@ -98,7 +98,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: $/publish-github-pages-artifact
+      - uses: $/actions/publish-github-pages-artifact
         with:
           path: .
           skip: "true"
@@ -107,7 +107,7 @@ jobs:
     name: opencode-ci-config (OPENCODE_CONFIG)
     runs-on: ubuntu-latest
     steps:
-      - uses: $/opencode-ci-config
+      - uses: $/actions/opencode-ci-config
 
       - name: Assert bundled config is wired
         run: |
@@ -145,7 +145,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: $/setup-mise
+      - uses: $/actions/setup-mise
 
       - name: Install release tooling
         run: bun install --frozen-lockfile

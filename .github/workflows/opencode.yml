@@ -109,13 +109,13 @@ jobs:
 
       - name: Parse OpenCode slash command
         id: slash
-        uses: $/opencode-resolver
+        uses: $/actions/opencode-resolver
         with:
           trigger-allowlist: ${{ inputs.trigger-allowlist || vars.OPENCODE_TRIGGER_ALLOWLIST }}
 
       - name: Prepare toolchain (mise)
         if: steps.slash.outputs.mode == 'build'
-        uses: $/setup-mise
+        uses: $/actions/setup-mise
 
       - name: Install dependencies (pnpm)
         if: steps.slash.outputs.mode == 'build' && inputs.toolchain == 'pnpm'
@@ -134,7 +134,7 @@ jobs:
       # Bundled opencode.json via OPENCODE_CONFIG (not consumer .opencode/) — see opencode-ci-config action.
       - name: Configure OpenCode for Actions
         if: steps.slash.outputs.mode == 'reply' || steps.slash.outputs.mode == 'build'
-        uses: $/opencode-ci-config
+        uses: $/actions/opencode-ci-config
 
       - name: Run opencode (github-reply)
         if: steps.slash.outputs.mode == 'reply'

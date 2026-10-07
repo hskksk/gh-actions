@@ -52,7 +52,7 @@ jobs:
       # Do not set registry-url on setup-node — semantic-release + OIDC conflict.
       # https://semantic-release.org/recipes/ci-configurations/github-actions/
       - name: Setup toolchain (mise)
-        uses: hskksk/gh-actions/setup-mise@v1
+        uses: hskksk/gh-actions/actions/setup-mise@v1
 
       - name: Upgrade npm CLI for stage publish
         run: npm install -g npm@^11.15.0
