@@ -4,6 +4,7 @@
 #
 # PR title  -> amannn/action-semantic-pull-request
 # Every commit in the PR -> wagoid/commitlint-github-action (reads the caller's commitlint config).
+# The consumer config should ignore GitHub-generated merge commit messages.
 name: Lint PR
 
 on:

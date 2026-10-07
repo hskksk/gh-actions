@@ -15,7 +15,7 @@ This repo is **not** published to npm. Versioning exists so [semantic-release](h
 
 **Release flow:** merge to `main` → **CI** succeeds → **Release** workflow runs semantic-release → GitHub Release + `vX.Y.Z` tag → floating `vX` tag is force-updated to the same commit.
 
-**Merging to `main`:** use **merge commit** or **rebase and merge**, not squash. semantic-release reads each commit on `main`; squash titles hide `feat`/`fix` commits that lived only in the PR body. The [`lint-pr`](.github/workflows/lint-pr.yml) workflow enforces [Conventional Commits](https://www.conventionalcommits.org/) on the **PR title** ([`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request)) and on **every commit** in the PR ([`commitlint`](https://commitlint.js.org/) via [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action)). Use types such as `feat`, `fix`, `perf` when you want a release; with the catch-all rule in [`.releaserc.json`](.releaserc.json), **every** merged commit (including `refactor`, `chore`, `docs`, …) triggers at least a **patch** release, `feat` bumps **minor**, and a breaking change (`!` such as `feat!: …`, or a `BREAKING CHANGE:` footer) bumps **major**.
+**Merging to `main`:** use **merge commit** or **rebase and merge**, not squash. semantic-release reads each commit on `main`; squash titles hide `feat`/`fix` commits that lived only in the PR body. The [`lint-pr`](.github/workflows/lint-pr.yml) workflow enforces [Conventional Commits](https://www.conventionalcommits.org/) on the **PR title** ([`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request)) and on authored commits in the PR ([`commitlint`](https://commitlint.js.org/) via [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action)). GitHub-generated merge commits are exempt through each consumer repo's commitlint config. Use types such as `feat`, `fix`, `perf` when you want a release; with the catch-all rule in [`.releaserc.json`](.releaserc.json), every Conventional Commit that reaches `main`—including `refactor`, `chore`, and `docs`—triggers at least a **patch** release, `feat` bumps **minor**, and a breaking change (`!` such as `feat!: …`, or a `BREAKING CHANGE:` footer) bumps **major**.
 
 **Tag ancestry:** semantic-release only treats `vX.Y.Z` tags that are **reachable from `main`** as prior releases. If tags were created on an old history line, either move them onto `main` or cut a new `vX.Y.Z` on `main` before the Release workflow runs.
 
@@ -196,7 +196,7 @@ jobs:
 
 **`uses: hskksk/gh-actions/.github/workflows/lint-pr.yml@v1`**
 
-Runs [`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request) on the **PR title** and [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action) on **every commit** in the PR. In **this** repo, `lint-pr.yml` includes its own `pull_request` trigger for dogfooding; **consumer repos** add a thin wrapper and call it via `workflow_call`.
+Runs [`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request) on the **PR title** and [`commitlint-github-action`](https://github.com/wagoid/commitlint-github-action) on PR commits. In **this** repo, `lint-pr.yml` includes its own `pull_request` trigger for dogfooding; **consumer repos** add a thin wrapper and call it via `workflow_call`. GitHub-generated merge commits are ignored by the consumer's commitlint config; authored commits remain subject to the configured rules.
 
 ```yaml
 name: lint-pr
@@ -212,9 +212,9 @@ jobs:
     uses: hskksk/gh-actions/.github/workflows/lint-pr.yml@v1
 ```
 
-Canonical file: **[`examples/lint-pr-consumer.yml`](examples/lint-pr-consumer.yml)**.
+Canonical files: **[`examples/lint-pr-consumer.yml`](examples/lint-pr-consumer.yml)** and **[`examples/commitlint.config.mjs`](examples/commitlint.config.mjs)**.
 
-The caller job must grant at least **`contents: read`** + **`pull-requests: read`**; no secrets are needed (`GITHUB_TOKEN` is automatic). commitlint reads the **consumer** repo’s commitlint config, so add `commitlint.config.*` there if you want rules beyond the default `@commitlint/config-conventional` (this repo’s [`.mjs`](commitlint.config.mjs) also forces lower-case subjects).
+The caller job must grant at least **`contents: read`** + **`pull-requests: read`**; no secrets are needed (`GITHUB_TOKEN` is automatic). Before using this workflow, copy **`examples/commitlint.config.mjs`** to `commitlint.config.mjs` at the root of the **consumer** repo. The reusable workflow reads the consumer's config, not this repository's. The config extends `@commitlint/config-conventional` and explicitly ignores GitHub-generated `Merge pull request #... from ...` messages; commitlint's built-in ignore pattern does not match that full GitHub subject. Add any repo-specific rules to the copied file (this repo's [`.mjs`](commitlint.config.mjs) also forces lower-case subjects).
 
 **Human:** make both jobs required status checks if you gate merges on them. **Agent:** add the wrapper workflow; keep commit/PR-message conventions in the consumer README.
 

@@ -4,7 +4,8 @@
 #
 # The caller job grants contents: read + pull-requests: read; no secrets needed
 # (the reusable workflow uses the automatic GITHUB_TOKEN).
-# Add commitlint.config.* to the consumer repo to extend @commitlint/config-conventional.
+# Copy examples/commitlint.config.mjs to the consumer repo root. It keeps the
+# conventional rules and ignores GitHub-generated merge commit messages.
 
 name: lint-pr
 
