@@ -1,3 +1,5 @@
+## [1.6.1](https://github.com/hskksk/gh-actions/compare/v1.6.0...v1.6.1) (2026-10-07)
+
 # [1.6.0](https://github.com/hskksk/gh-actions/compare/v1.5.0...v1.6.0) (2026-10-07)
 
 
