@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   workflow-lint:
@@ -102,16 +103,38 @@ jobs:
           path: .
           skip: "true"
 
-  smoke-opencode-github-progress:
-    name: opencode-github-progress (stage script)
+  smoke-opencode-ci-config:
+    name: opencode-ci-config (OPENCODE_CONFIG)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: $/actions/opencode-ci-config
+
+      - name: Assert bundled config is wired
+        run: |
+          test -n "${OPENCODE_CONFIG:-}"
+          test -f "$OPENCODE_CONFIG"
+          jq -e '.permission.external_directory["/tmp"] == "allow"' "$OPENCODE_CONFIG"
+
+  semantic-pull-request:
+    name: semantic-pull-request
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  commitlint:
+    name: commitlint
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
-      - uses: $/actions/opencode-github-progress
-
-      - name: Assert helper is executable
-        run: test -x scripts/opencode-github-progress.sh
+      - uses: wagoid/commitlint-github-action@v6
 
   release-check:
     name: semantic-release dry-run

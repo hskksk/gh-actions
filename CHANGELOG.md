@@ -1,3 +1,31 @@
+# [1.6.0](https://github.com/hskksk/gh-actions/compare/v1.5.0...v1.6.0) (2026-10-07)
+
+
+### Features
+
+* **opencode:** require Conventional Commits for commit messages and PR titles ([7d58042](https://github.com/hskksk/gh-actions/commit/7d58042fd49707cfaecd34da500c5f9f84ed8548))
+
+# [1.5.0](https://github.com/hskksk/gh-actions/compare/v1.4.0...v1.5.0) (2026-10-06)
+
+
+### Features
+
+* **ci:** add semantic PR and commitlint checks ([#20](https://github.com/hskksk/gh-actions/issues/20)) ([4174580](https://github.com/hskksk/gh-actions/commit/4174580902a4c6055bd6c3d50cb03fb0c67baf50))
+
+# [1.4.0](https://github.com/hskksk/gh-actions/compare/v1.3.0...v1.4.0) (2026-10-06)
+
+
+### Features
+
+* **opencode:** install progress helper outside checkout ([#15](https://github.com/hskksk/gh-actions/issues/15)) ([986273b](https://github.com/hskksk/gh-actions/commit/986273bccb941f41059d67aebb232aa1cf3d3cd2)), closes [#14](https://github.com/hskksk/gh-actions/issues/14)
+
+# [1.3.0](https://github.com/hskksk/gh-actions/compare/v1.2.0...v1.3.0) (2026-10-06)
+
+
+### Features
+
+* **opencode:** add issue/PR triggers for in-repo dogfooding ([#16](https://github.com/hskksk/gh-actions/issues/16)) ([1695f44](https://github.com/hskksk/gh-actions/commit/1695f44c0dcde0ef21dc250d90449a4b551bf990)), closes [#actions](https://github.com/hskksk/gh-actions/issues/actions)
+
 # [1.2.0](https://github.com/hskksk/gh-actions/compare/v1.1.0...v1.2.0) (2026-10-05)
 
 
