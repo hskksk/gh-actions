@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/hskksk/gh-actions/compare/v1.5.0...v1.6.0) (2026-10-07)
+
+
+### Features
+
+* **opencode:** require Conventional Commits for commit messages and PR titles ([7d58042](https://github.com/hskksk/gh-actions/commit/7d58042fd49707cfaecd34da500c5f9f84ed8548))
+
 # [1.5.0](https://github.com/hskksk/gh-actions/compare/v1.4.0...v1.5.0) (2026-10-06)
 
 
