@@ -62,6 +62,7 @@ Artifacts are consumed via GitHub paths only (e.g. `uses: hskksk/gh-actions/acti
 | npm semantic-release + `npm stage publish` (pnpm or Bun) | `.github/workflows/npm-release-staged.yml` + [`examples/npm-release-staged-consumer.yml`](examples/npm-release-staged-consumer.yml) | Reusable workflow |
 | Parse `/oc` only (custom workflow) | `actions/opencode-resolver` | Node action |
 | OpenCode CI permissions (`/tmp`, non-interactive) | `actions/opencode-ci-config` | Composite |
+| Install OpenCode + `opencode github run` in CI | `actions/opencode-github-run` | Composite |
 | pnpm + Node | `actions/setup-pnpm` | Composite |
 | mise (pinned action + release) | `actions/setup-mise` | Composite |
 | Supabase CLI in CI | `actions/setup-supabase-cli` | Composite |
@@ -80,7 +81,7 @@ The reusable workflow **file name here** for OpenCode is `opencode.yml`. The con
 
 **`uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1`**
 
-In **this** repo, `opencode.yml` includes issue/PR `on:` triggers for dogfooding. **Consumer repos** add their own `on:` in a thin wrapper (below) and call this file via `workflow_call`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → `opencode-ci-config` (`OPENCODE_CONFIG` → bundled `opencode.json`, not files under the consumer `.opencode/`) → pnpm or Bun (build mode) → `anomalyco/opencode/github@latest` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); not `use_github_token`). Direct runs use `vars.OPENCODE_TRIGGER_ALLOWLIST` when `trigger-allowlist` input is empty.
+In **this** repo, `opencode.yml` includes issue/PR `on:` triggers for dogfooding. **Consumer repos** add their own `on:` in a thin wrapper (below) and call this file via `workflow_call`. Job flow: checkout → `opencode-resolver` (optional model ack via App OIDC) → `opencode-ci-config` (`OPENCODE_CONFIG` → bundled `opencode.json`, not files under the consumer `.opencode/`) → pnpm or Bun (build mode) → `actions/opencode-github-run` (OIDC + [OpenCode GitHub App](https://github.com/apps/opencode-agent); replaces the frozen `anomalyco/opencode/github` action). Direct runs use `vars.OPENCODE_TRIGGER_ALLOWLIST` when `trigger-allowlist` input is empty.
 
 **Inspect target:** existing `opencode.yml` (replace inline `github-script`), lockfile, pnpm vs Bun.
 
@@ -106,6 +107,7 @@ jobs:
   opencode:
     permissions:
       id-token: write
+      contents: read
     uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
     secrets: inherit
     with:
@@ -120,12 +122,13 @@ Use `toolchain: bun` when the consumer repo uses Bun. Pin Node/pnpm/Bun in the c
 | Mistake | Why it breaks |
 |--------|----------------|
 | No `permissions` on the `opencode` job | Reusable workflow cannot get `id-token: write`; workflow file validation fails |
-| Omitting `id-token: write` on the caller job | No OIDC → no App token for ack comments or `anomalyco/opencode/github` |
+| Omitting `id-token: write` on the caller job | No OIDC → no App token for ack comments or `opencode github run` |
+| Omitting `contents: read` on the caller job | Lower API quota if you override `opencode-version` to resolve from GitHub Releases |
 | Workflow-level `permissions: contents: read` only | Caps the job token; caller job still needs `id-token: write` on the **job** |
 | `GITHUB_TOKEN` + `use_github_token` without switching the reusable workflow | This template uses OIDC + App; do not mix modes |
 | Missing `.mise.toml` in the consumer repo | `setup-mise` has nothing to install for build mode |
 
-The **caller job** must grant **`id-token: write` only** (same as the reusable workflow). Model ack and OpenCode exchange OIDC for the OpenCode GitHub App installation token inside `opencode github run`—not the workflow `GITHUB_TOKEN`. Reusable workflows cannot elevate beyond what the caller allows.
+The **caller job** must grant **`id-token: write`** and **`contents: read`** (same as the reusable workflow). Model ack and OpenCode exchange OIDC for the OpenCode GitHub App installation token inside `opencode github run`—not the workflow `GITHUB_TOKEN`. Reusable workflows cannot elevate beyond what the caller allows.
 
 | Secret | Purpose |
 |--------|---------|
@@ -136,7 +139,7 @@ The **caller job** must grant **`id-token: write` only** (same as the reusable w
 |----------|---------|
 | `OPENCODE_TRIGGER_ALLOWLIST` | Extra allowed trigger logins |
 
-**Human:** install [OpenCode GitHub App](https://github.com/apps/opencode-agent) on the repo; create OpenCode API keys → repo secrets; optional allowlist variable; confirm org allows `anomalyco/opencode`.
+**Human:** install [OpenCode GitHub App](https://github.com/apps/opencode-agent) on the repo; create OpenCode API keys → repo secrets; optional allowlist variable.
 
 **Agent:** remove old inline resolver; add **`.mise.toml`** with the caller’s toolchain; use `toolchain: bun` + `stub-opencode-auth: true` when needed (e.g. prism-style).
 
@@ -144,15 +147,19 @@ The **caller job** must grant **`id-token: write` only** (same as the reusable w
 
 Use when OpenCode runs in CI and you need permissions (e.g. **`external_directory` for `/tmp`**) without committing `.opencode/` or `opencode.json` in the consumer repo.
 
-The action only sets `OPENCODE_CONFIG` to **`${{ github.action_path }}/opencode.json`** on the runner (config ships inside this repository’s action folder). Pass it through to `anomalyco/opencode/github`:
+The action only sets `OPENCODE_CONFIG` to **`${{ github.action_path }}/opencode.json`** on the runner (config ships inside this repository’s action folder). The reusable `opencode.yml` wires this automatically before `opencode-github-run`:
 
 ```yaml
 - uses: hskksk/gh-actions/actions/opencode-ci-config@v1
 
-- uses: anomalyco/opencode/github@latest
+- uses: hskksk/gh-actions/actions/opencode-github-run@v1
   env:
     OPENCODE_CONFIG: ${{ env.OPENCODE_CONFIG }}
-    # …API keys, etc.
+    OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+    # …
+  with:
+    model: opencode/big-pickle
+    prompt: …
 ```
 
 [OpenCode config precedence](https://opencode.ai/docs/config/): `OPENCODE_CONFIG` loads after global `~/.config/opencode` and before project `opencode.json`, so the checkout stays clean and you avoid a repo-root `.opencode` tree. To override further at runtime, use `OPENCODE_CONFIG_CONTENT` on the OpenCode step (highest among env-based overrides).
@@ -218,9 +225,13 @@ The caller job must grant at least **`contents: read`** + **`pull-requests: read
 
 **Human:** make both jobs required status checks if you gate merges on them. **Agent:** add the wrapper workflow; keep commit/PR-message conventions in the consumer README.
 
+### `opencode-github-run` composite action
+
+**`uses: hskksk/gh-actions/actions/opencode-github-run@v1`** — installs OpenCode 1.x (default **1.19.5**, overridable via `opencode-version`) and runs `opencode github run`. Uses `GITHUB_TOKEN` when resolving the CLI version from GitHub Releases. Inputs mirror the frozen upstream `anomalyco/opencode/github` action (`model`, `agent`, `share`, `prompt`, `use_github_token`, etc.).
+
 ### `opencode-resolver` (action only)
 
-**`uses: hskksk/gh-actions/actions/opencode-resolver@v1`** — outputs `mode`, `model`, `prompt`. Same OpenCode secrets if followed by `anomalyco/opencode/github`.
+**`uses: hskksk/gh-actions/actions/opencode-resolver@v1`** — outputs `mode`, `model`, `prompt`. Pair with `opencode-github-run` (or the reusable `opencode.yml` workflow).
 
 ### `setup-pnpm`
 

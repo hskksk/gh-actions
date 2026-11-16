@@ -115,6 +115,43 @@ jobs:
           test -f "$OPENCODE_CONFIG"
           jq -e '.permission.external_directory["/tmp"] == "allow"' "$OPENCODE_CONFIG"
 
+  smoke-opencode-github-run:
+    name: opencode-github-run (resolve version)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve pinned and authenticated OpenCode version
+        env:
+          FALLBACK_VERSION: "1.19.5"
+        run: |
+          set -euo pipefail
+          pinned="$(printf '%s' "1.19.5" | sed 's/^v//')"
+          test "$pinned" = "1.19.5"
+          tag=""
+          tag="$(
+            curl -fsSL \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/anomalyco/opencode/releases/latest" \
+            | jq -r '.tag_name // empty'
+          )"
+          tag="${tag#v}"
+          if [ -z "$tag" ]; then
+            tag="$FALLBACK_VERSION"
+          fi
+          if [[ "$tag" =~ ^2\. ]]; then
+            tag="$FALLBACK_VERSION"
+          fi
+          echo "resolved=${tag}"
+          test -n "$tag"
+
+      - name: Assert action metadata exists
+        run: test -f actions/opencode-github-run/action.yml
+
   release-check:
     name: semantic-release dry-run
     if: github.event_name == 'pull_request'

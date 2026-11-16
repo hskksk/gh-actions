@@ -7,7 +7,7 @@
 # - Commit .mise.toml with node + pnpm or bun (setup-mise installs from it)
 # - Optional: repo variable OPENCODE_TRIGGER_ALLOWLIST (comma-separated logins)
 #
-# Caller job permissions must be exactly id-token: write (OIDC → OpenCode App installation token).
+# Caller job: id-token (OIDC → OpenCode App) + contents: read (GITHUB_TOKEN for release API when resolving CLI version).
 
 name: opencode
 
@@ -25,6 +25,7 @@ jobs:
   opencode:
     permissions:
       id-token: write
+      contents: read
     uses: hskksk/gh-actions/.github/workflows/opencode.yml@v1
     secrets: inherit
     with:
