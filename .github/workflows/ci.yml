@@ -125,6 +125,7 @@ jobs:
 
       - name: Resolve pinned and authenticated OpenCode version
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           FALLBACK_VERSION: "1.19.5"
         run: |
           set -euo pipefail

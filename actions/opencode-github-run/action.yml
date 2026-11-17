@@ -67,6 +67,7 @@ runs:
       id: version
       shell: bash
       env:
+        GITHUB_TOKEN: ${{ github.token }}
         PINNED_VERSION: ${{ inputs.opencode-version }}
         FALLBACK_VERSION: "1.19.5"
       run: |
