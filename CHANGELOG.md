@@ -1,3 +1,11 @@
+## [1.9.1](https://github.com/hskksk/gh-actions/compare/v1.9.0...v1.9.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **security:** autofix Template Injection in GitHub Workflows Action ([c85cbe1](https://github.com/hskksk/gh-actions/commit/c85cbe17264b68936ce7df87c28f6d4115e67ad6))
+* **security:** autofix Template Injection in GitHub Workflows Action ([0f402b8](https://github.com/hskksk/gh-actions/commit/0f402b8c33925f8a464eda6046e04355ba705255))
+
 # [1.9.0](https://github.com/hskksk/gh-actions/compare/v1.8.1...v1.9.0) (2026-11-19)
 
 
