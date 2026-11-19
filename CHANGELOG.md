@@ -1,3 +1,15 @@
+# [1.9.0](https://github.com/hskksk/gh-actions/compare/v1.8.1...v1.9.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **opencode:** pass github.token for release version resolution ([e74d8a3](https://github.com/hskksk/gh-actions/commit/e74d8a361aa67153189dbcee155a96af51e6607c))
+
+
+### Features
+
+* **opencode:** add opencode-github-run to replace frozen upstream action ([69db2d6](https://github.com/hskksk/gh-actions/commit/69db2d6cd9ea22b43e4635fcef2c5953bc5da55b))
+
 ## [1.8.1](https://github.com/hskksk/gh-actions/compare/v1.8.0...v1.8.1) (2026-10-07)
 
 
