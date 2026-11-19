@@ -1,0 +1,135 @@
+name: Run opencode on GitHub
+description: >-
+  Install OpenCode 1.x and run `opencode github run` (replacement for the frozen
+  anomalyco/opencode/github action). Resolves the CLI version with GITHUB_TOKEN
+  when needed and falls back to a pinned OpenCode 1 release.
+branding:
+  icon: code
+  color: orange
+
+inputs:
+  model:
+    description: Model to use
+    required: true
+
+  agent:
+    description: >-
+      Agent to use. Must be a primary agent. Falls back to default_agent from config
+      or build when not found.
+    required: false
+    default: ""
+
+  share:
+    description: Share the opencode session (defaults to true for public repos)
+    required: false
+    default: ""
+
+  prompt:
+    description: Custom prompt to override the default prompt
+    required: false
+    default: ""
+
+  use_github_token:
+    description: >-
+      Use GITHUB_TOKEN directly instead of OpenCode App token exchange. When true,
+      skips OIDC and uses the GITHUB_TOKEN env var inside `opencode github run`.
+    required: false
+    default: "false"
+
+  mentions:
+    description: Comma-separated list of trigger phrases (case-insensitive)
+    required: false
+    default: ""
+
+  variant:
+    description: Model variant for provider-specific reasoning effort (e.g. high, max, minimal)
+    required: false
+    default: ""
+
+  oidc_base_url:
+    description: >-
+      Base URL for OIDC token exchange API when running a custom GitHub App install.
+      Defaults to https://api.opencode.ai
+    required: false
+    default: ""
+
+  opencode-version:
+    description: >-
+      OpenCode 1.x version to install (e.g. 1.19.5). When empty, resolve via the
+      GitHub API using GITHUB_TOKEN, then fall back to 1.19.5.
+    required: false
+    default: "1.19.5"
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve opencode version
+      id: version
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        PINNED_VERSION: ${{ inputs.opencode-version }}
+        FALLBACK_VERSION: "1.19.5"
+      run: |
+        set -euo pipefail
+        resolve_version() {
+          local pinned="${PINNED_VERSION//[[:space:]]/}"
+          pinned="${pinned#v}"
+          if [ -n "$pinned" ]; then
+            printf '%s' "$pinned"
+            return
+          fi
+          local tag=""
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            tag="$(
+              curl -fsSL \
+                -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/anomalyco/opencode/releases/latest" \
+              | jq -r '.tag_name // empty' 2>/dev/null || true
+            )"
+          fi
+          tag="${tag#v}"
+          if [ -z "$tag" ]; then
+            tag="$FALLBACK_VERSION"
+          fi
+          if [[ "$tag" =~ ^2\. ]]; then
+            echo "::warning::Resolved OpenCode $tag is v2; installing OpenCode 1 fallback $FALLBACK_VERSION instead."
+            tag="$FALLBACK_VERSION"
+          fi
+          printf '%s' "$tag"
+        }
+        resolved="$(resolve_version)"
+        echo "version=${resolved}" >>"$GITHUB_OUTPUT"
+        echo "VERSION=${resolved}" >>"$GITHUB_ENV"
+        echo "Resolved OpenCode CLI version: ${resolved}"
+
+    - name: Cache opencode
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.opencode/bin
+        key: opencode-${{ runner.os }}-${{ runner.arch }}-v${{ steps.version.outputs.version }}
+
+    - name: Install opencode
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: curl -fsSL https://opencode.ai/install | bash
+
+    - name: Add opencode to PATH
+      shell: bash
+      run: echo "$HOME/.opencode/bin" >>"$GITHUB_PATH"
+
+    - name: Run opencode
+      shell: bash
+      run: opencode github run
+      env:
+        MODEL: ${{ inputs.model }}
+        AGENT: ${{ inputs.agent }}
+        SHARE: ${{ inputs.share }}
+        PROMPT: ${{ inputs.prompt }}
+        USE_GITHUB_TOKEN: ${{ inputs.use_github_token }}
+        MENTIONS: ${{ inputs.mentions }}
+        VARIANT: ${{ inputs.variant }}
+        OIDC_BASE_URL: ${{ inputs.oidc_base_url }}
