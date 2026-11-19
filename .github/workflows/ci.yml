@@ -14,7 +14,7 @@ jobs:
     name: actionlint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: $/actions/setup-mise
 
@@ -28,7 +28,7 @@ jobs:
       run:
         working-directory: actions/opencode-resolver
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: $/actions/setup-mise
 
@@ -48,7 +48,7 @@ jobs:
     name: setup-mise smoke
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: $/actions/setup-mise
 
@@ -62,7 +62,7 @@ jobs:
     name: setup-pnpm smoke
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: $/actions/setup-pnpm
         with:
@@ -78,7 +78,7 @@ jobs:
     name: setup-supabase-cli (missing secrets)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Expect failure when secrets unset
         uses: $/actions/setup-supabase-cli
@@ -96,7 +96,7 @@ jobs:
     name: publish-github-pages-artifact (skip)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: $/actions/publish-github-pages-artifact
         with:
@@ -121,7 +121,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve pinned and authenticated OpenCode version
         env:
@@ -158,7 +158,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
