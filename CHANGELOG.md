@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/hskksk/gh-actions/compare/v1.9.2...v1.10.0) (2026-11-20)
+
+
+### Features
+
+* Add CodeQL analysis workflow configuration ([68fba0c](https://github.com/hskksk/gh-actions/commit/68fba0cbfbfa71aef0092dadd29e609f059a1917))
+
 ## [1.9.2](https://github.com/hskksk/gh-actions/compare/v1.9.1...v1.9.2) (2026-11-19)
 
 ## [1.9.1](https://github.com/hskksk/gh-actions/compare/v1.9.0...v1.9.1) (2026-11-19)
