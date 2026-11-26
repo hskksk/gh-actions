@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "skills": {
+    "dependabot": {
+      "source": "github/awesome-copilot",
+      "ref": "9fd4597c60d7ca3c290fe8d142797e96f1d306f8",
+      "commit": "9fd4597c60d7ca3c290fe8d142797e96f1d306f8",
+      "sourceType": "github",
+      "skillPath": "skills/dependabot/SKILL.md",
+      "computedHash": "e7dcdefae4267b43969c776e1837e7a597d9a3c1842bf49f0e5fa76fc6352f3c"
+    }
+  }
+}
