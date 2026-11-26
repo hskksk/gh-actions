@@ -36,7 +36,6 @@ git push origin refs/tags/v1 --force
 | --- | --- |
 | [`actions/`](actions/) | Shared **composite / Node actions** consumed as `uses: hskksk/gh-actions/actions/<name>@v1`. |
 | [`.github/workflows/`](.github/workflows/) | **`ci.yml` / `release.yml`** (this repo) and **reusable** `workflow_call` workflows (`lint-pr.yml`, `opencode.yml`, `npm-release-staged.yml`). |
-| [`skills/`](skills/) | Vendored Agent Skills at `skills/<name>/SKILL.md` plus `references/`. [`dependabot`](skills/dependabot/) is copied from [github/awesome-copilot](https://github.com/github/awesome-copilot) `9fd4597c60d7ca3c290fe8d142797e96f1d306f8`. |
 
 ---
 
