@@ -1,3 +1,15 @@
+# [1.11.0](https://github.com/hskksk/gh-actions/compare/v1.10.0...v1.11.0) (2026-11-26)
+
+
+### Bug Fixes
+
+* **skills:** install dependabot with skills cli ([b6be45e](https://github.com/hskksk/gh-actions/commit/b6be45e6d3f1d0eced0df40ad8202e3cd44a24de))
+
+
+### Features
+
+* **skills:** add dependabot agent skill ([50cd0ea](https://github.com/hskksk/gh-actions/commit/50cd0ea08b0310e7666cdfbef14e41a5b318406c)), closes [#actions](https://github.com/hskksk/gh-actions/issues/actions)
+
 # [1.10.0](https://github.com/hskksk/gh-actions/compare/v1.9.2...v1.10.0) (2026-11-20)
 
 
